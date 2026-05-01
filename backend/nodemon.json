@@ -1,0 +1,9 @@
+{
+  "watch": ["server.js", "routes", "controllers"],
+  "ext": "js,json",
+  "ignore": ["node_modules", "uploads", "prisma", "../frontend", "../node_modules"],
+  "delay": "1000",
+  "env": {
+    "NODE_ENV": "development"
+  }
+}
