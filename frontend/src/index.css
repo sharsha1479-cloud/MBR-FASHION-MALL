@@ -7,15 +7,15 @@
 }
 
 body {
-  @apply min-h-screen bg-slate-50 text-slate-900 antialiased;
+  @apply min-h-screen bg-secondary text-primary antialiased;
 }
 
 button {
-  @apply rounded shadow-sm border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none;
+  @apply rounded shadow-sm border border-maroon focus:border-maroon focus:ring-2 focus:ring-maroon/20 focus:outline-none;
 }
 
 input,
 select,
 textarea {
-  @apply rounded border border-slate-300 bg-white text-slate-900 shadow-sm placeholder:text-slate-400 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none;
+  @apply rounded border border-slate-300 bg-white text-slate-900 shadow-sm placeholder:text-slate-400 focus:border-maroon focus:ring-2 focus:ring-maroon/20 focus:outline-none;
 }

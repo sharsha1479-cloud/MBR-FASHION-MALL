@@ -1,7 +1,7 @@
 {
   "name": "mens-fashion-backend",
   "version": "1.0.0",
-  "description": "Backend for men's fashion e-commerce",
+  "description": "Backend for MBR Fashion Hub e-commerce",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

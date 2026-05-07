@@ -229,7 +229,7 @@ const HomePage = () => {
           >
             <h2 className="text-4xl font-bold text-primary mb-4">Trending Styles</h2>
             <p className="text-lg text-accent max-w-2xl mx-auto">
-              What's hot right now in men's fashion.
+              What's hot right now in MBR Fashion Hub.
             </p>
           </motion.div>
           {loading ? <LoadingSkeleton /> : trendingProducts.length > 0 ? (

@@ -97,7 +97,7 @@ const CheckoutPage = () => {
         key: razorpayOrder.key,
         amount: razorpayOrder.amount,
         currency: razorpayOrder.currency,
-        name: 'Mens Fashion',
+        name: 'MBR Fashion Hub',
         description: `Order for ${cartItems.length} item${cartItems.length === 1 ? '' : 's'}`,
         order_id: razorpayOrder.id,
         prefill: {

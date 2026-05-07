@@ -1,6 +1,6 @@
-# Men's Fashion E-commerce
+# MBR Fashion Hub
 
-A modern e-commerce website for men's fashion built with React, TypeScript, Tailwind CSS, Node.js, Express, and MongoDB.
+A modern e-commerce website for MBR Fashion Hub built with React, TypeScript, Tailwind CSS, Node.js, Express, and MongoDB.
 
 ## Structure
 

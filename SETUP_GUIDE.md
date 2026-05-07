@@ -1,4 +1,4 @@
-# Men's Fashion E-commerce - Setup Guide
+# MBR Fashion Hub - Setup Guide
 
 ## 🚀 Quick Start
 

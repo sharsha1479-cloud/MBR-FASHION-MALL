@@ -58,7 +58,7 @@ const Layout = ({ children }: { children: ReactNode }) => {
 
   const CountBadge = ({ count }: { count: number }) => (
     count > 0 ? (
-      <span className="ml-2 inline-flex min-w-5 items-center justify-center rounded-full bg-accent px-1.5 py-0.5 text-[11px] font-bold leading-none text-primary">
+      <span className="ml-2 inline-flex min-w-5 items-center justify-center rounded-full bg-primary px-1.5 py-0.5 text-[11px] font-bold leading-none text-secondary">
         {count > 99 ? '99+' : count}
       </span>
     ) : null
@@ -71,26 +71,26 @@ const Layout = ({ children }: { children: ReactNode }) => {
 
   const navLinks = (
     <>
-      <Link to="/products" className="block hover:text-accent transition-colors duration-300" onClick={closeMobile}>
+      <Link to="/products" className="block text-primary transition-colors duration-300 hover:text-primary hover:border-b-2 hover:border-primary" onClick={closeMobile}>
         Shop
       </Link>
-      <Link to="/cart" className="flex items-center hover:text-accent transition-colors duration-300" onClick={closeMobile}>
+      <Link to="/cart" className="flex items-center text-primary transition-colors duration-300 hover:text-primary hover:border-b-2 hover:border-primary" onClick={closeMobile}>
         <span>Cart</span>
         <CountBadge count={cartCount} />
       </Link>
       {user && (
         <>
-          <Link to="/wishlist" className="flex items-center hover:text-accent transition-colors duration-300" onClick={closeMobile}>
+          <Link to="/wishlist" className="flex items-center text-primary transition-colors duration-300 hover:text-primary hover:border-b-2 hover:border-primary" onClick={closeMobile}>
             <span>Wishlist</span>
             <CountBadge count={wishlistCount} />
           </Link>
-          <Link to="/orders" className="block hover:text-accent transition-colors duration-300" onClick={closeMobile}>
+          <Link to="/orders" className="block text-primary transition-colors duration-300 hover:text-primary hover:border-b-2 hover:border-primary" onClick={closeMobile}>
             My Orders
           </Link>
         </>
       )}
       {user?.role === 'admin' && (
-        <Link to="/admin" className="block hover:text-accent transition-colors duration-300" onClick={closeMobile}>
+        <Link to="/admin" className="block text-primary transition-colors duration-300 hover:text-primary hover:border-b-2 hover:border-primary" onClick={closeMobile}>
           Admin
         </Link>
       )}
@@ -99,13 +99,13 @@ const Layout = ({ children }: { children: ReactNode }) => {
 
   return (
     <div className="min-h-screen bg-secondary text-primary flex flex-col">
-      <header className="sticky top-0 z-50 bg-primary text-secondary shadow-lg">
-        <div className="max-w-7xl mx-auto flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4">
-          <Link to="/" className="text-xl sm:text-2xl font-bold truncate">
-            Men's Fashion
+      <header className="sticky top-0 z-50 bg-secondary text-primary border-b-4 border-maroon shadow-[0_6px_20px_rgba(0,0,0,0.08)]">
+        <div className="max-w-7xl mx-auto flex items-center justify-between px-4 sm:px-6 py-4">
+          <Link to="/" className="text-xl sm:text-2xl font-extrabold tracking-[0.12em] uppercase text-primary">
+            MBR Fashion Hub
           </Link>
 
-          <nav className="hidden md:flex items-center space-x-6 sm:space-x-8">
+          <nav className="hidden md:flex items-center space-x-10">
             {navLinks}
           </nav>
 
@@ -115,31 +115,31 @@ const Layout = ({ children }: { children: ReactNode }) => {
                 <button
                   type="button"
                   onClick={() => setProfileOpen((current) => !current)}
-                  className="flex items-center gap-2 sm:gap-3 rounded-full border border-secondary/20 bg-secondary/10 px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold transition hover:bg-secondary/20"
+                  className="flex items-center gap-2 sm:gap-3 rounded-full border border-maroon bg-cream px-3 sm:px-4 py-2 text-sm font-semibold text-primary transition hover:bg-soft"
                 >
                   <span className="hidden sm:inline">{user.name ?? 'Profile'}</span>
-                  <span className="inline-flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-primary/20 text-primary text-xs sm:text-sm">
+                  <span className="inline-flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-maroon/10 text-maroon text-sm font-bold">
                     {user.name?.charAt(0).toUpperCase() ?? 'U'}
                   </span>
                 </button>
                 {profileOpen && (
-                  <div className="absolute right-0 top-full mt-2 sm:mt-3 w-64 sm:w-72 rounded-2xl sm:rounded-3xl border border-secondary/20 bg-primary p-3 sm:p-4 text-left shadow-2xl shadow-slate-950/10">
-                    <p className="text-xs uppercase tracking-[0.24em] text-secondary/70">Profile Details</p>
-                    <h3 className="mt-2 sm:mt-3 text-base sm:text-lg font-semibold text-secondary">{user.name ?? 'User'}</h3>
-                    <p className="text-xs sm:text-sm text-secondary/80">{user.email}</p>
-                    <div className="mt-3 sm:mt-4 space-y-2 sm:space-y-3 text-xs sm:text-sm text-secondary/90">
-                      <div className="flex items-center justify-between rounded-2xl bg-slate-950/5 px-2 sm:px-3 py-2">
-                        <span className="text-slate-500">Role</span>
+                  <div className="absolute right-0 top-full mt-2 sm:mt-3 w-64 sm:w-72 rounded-2xl sm:rounded-3xl border border-maroon/20 bg-secondary p-3 sm:p-4 text-left shadow-2xl shadow-maroon/10">
+                    <p className="text-xs uppercase tracking-[0.24em] text-maroon/70">Profile Details</p>
+                    <h3 className="mt-2 sm:mt-3 text-base sm:text-lg font-semibold text-primary">{user.name ?? 'User'}</h3>
+                    <p className="text-xs sm:text-sm text-maroon/70">{user.email}</p>
+                    <div className="mt-3 sm:mt-4 space-y-2 sm:space-y-3 text-sm text-primary">
+                      <div className="flex items-center justify-between rounded-2xl bg-cream px-2 sm:px-3 py-2">
+                        <span className="text-maroon/80">Role</span>
                         <span className="font-semibold">{user.role}</span>
                       </div>
-                      <div className="flex items-center justify-between rounded-2xl bg-slate-950/5 px-2 sm:px-3 py-2">
-                        <span className="text-slate-500">Token</span>
+                      <div className="flex items-center justify-between rounded-2xl bg-cream px-2 sm:px-3 py-2">
+                        <span className="text-maroon/80">Token</span>
                         <span className="truncate text-xs">{user.token.slice(0, 12)}...</span>
                       </div>
                     </div>
                     <button
                       onClick={handleLogout}
-                      className="mt-3 sm:mt-4 w-full rounded-full bg-accent px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold text-primary transition hover:bg-accent/90"
+                      className="mt-3 sm:mt-4 w-full rounded-full bg-maroon px-3 sm:px-4 py-2 text-sm font-semibold text-secondary transition hover:bg-maroon/90"
                     >
                       Logout
                     </button>
@@ -147,7 +147,7 @@ const Layout = ({ children }: { children: ReactNode }) => {
                 )}
               </div>
             ) : (
-              <Link to="/login" className="rounded-full border border-secondary/20 bg-secondary/10 px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold transition hover:bg-secondary/20">
+              <Link to="/login" className="rounded-full border border-maroon bg-cream px-3 sm:px-4 py-2 text-sm font-semibold text-primary transition hover:bg-soft">
                 Login
               </Link>
             )}
@@ -159,14 +159,14 @@ const Layout = ({ children }: { children: ReactNode }) => {
                 setMobileOpen((current) => !current);
                 setProfileOpen(false);
               }}
-              className="rounded-full border border-secondary px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold"
+              className="rounded-full border border-maroon bg-cream px-3 sm:px-4 py-2 text-sm font-semibold text-primary"
             >
               {mobileOpen ? 'Close' : 'Menu'}
             </button>
           </div>
         </div>
         {mobileOpen && (
-          <div className="md:hidden border-t border-primary/20 bg-primary/95 px-4 sm:px-6 py-3 sm:py-4 text-secondary space-y-2 sm:space-y-3">
+          <div className="md:hidden border-t border-accent/20 bg-secondary/95 px-4 sm:px-6 py-3 sm:py-4 text-primary space-y-2 sm:space-y-3">
             {navLinks}
             <div className="mt-4 border-t border-secondary/10 pt-4">
               {user ? (
@@ -175,14 +175,14 @@ const Layout = ({ children }: { children: ReactNode }) => {
                     handleLogout();
                     setMobileOpen(false);
                   }}
-                  className="w-full rounded-full bg-accent px-4 py-2 sm:py-3 text-xs sm:text-sm font-semibold text-primary transition hover:bg-accent/90"
+                  className="w-full rounded-full bg-primary px-4 py-2 sm:py-3 text-sm font-semibold text-secondary transition hover:bg-primary/90"
                 >
                   Logout
                 </button>
               ) : (
                 <Link
                   to="/login"
-                  className="block rounded-full border border-secondary/20 bg-secondary/10 px-4 py-2 sm:py-3 text-center text-xs sm:text-sm font-semibold transition hover:bg-secondary/20"
+                  className="block rounded-full border border-accent bg-cream/70 px-4 py-2 sm:py-3 text-center text-sm font-semibold text-primary transition hover:bg-cream"
                   onClick={closeMobile}
                 >
                   Login
@@ -195,7 +195,7 @@ const Layout = ({ children }: { children: ReactNode }) => {
       <main className="flex-1">{children}</main>
       <footer className="bg-primary text-secondary py-6 sm:py-8 md:py-10 mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 text-center text-xs sm:text-sm">
-          <p>© 2026 Men's Fashion. Crafted for modern wardrobes.</p>
+          <p>© 2026 MBR Fashion Hub. Crafted for modern wardrobes.</p>
         </div>
       </footer>
     </div>
