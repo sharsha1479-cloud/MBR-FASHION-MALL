@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { fetchCart, removeCartItem, updateCartItem } from '../services/cart';
 import { getProductImageUrl } from '../services/product';
 import { useAuth } from '../context/AuthContext';
+import { ProductPrice, getEffectivePrice } from '../utils/pricing';
 
 const CartPage = () => {
   const [items, setItems] = useState<any[]>([]);
@@ -36,7 +37,7 @@ const CartPage = () => {
     loadCart();
   }, [isAuthenticated]);
 
-  const total = useMemo(() => items.reduce((sum, item) => sum + item.product.price * item.quantity, 0), [items]);
+  const total = useMemo(() => items.reduce((sum, item) => sum + getEffectivePrice(item.product) * item.quantity, 0), [items]);
 
   const updateQuantity = async (id: string, quantity: number) => {
     await updateCartItem(id, quantity);
@@ -53,37 +54,39 @@ const CartPage = () => {
   }
 
   return (
-    <div className="space-y-8">
-      <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h1 className="text-3xl font-semibold text-slate-900">Shopping Cart</h1>
-        {error && <p className="mt-6 rounded-2xl bg-red-100 px-4 py-3 text-sm text-red-700">{error}</p>}
+    <div className="space-y-4 sm:space-y-6 md:space-y-8">
+      <div className="rounded-2xl sm:rounded-3xl border border-slate-200 bg-white p-4 sm:p-6 shadow-sm">
+        <h1 className="text-2xl sm:text-3xl font-semibold text-slate-900">Shopping Cart</h1>
+        {error && <p className="mt-4 sm:mt-6 rounded-2xl bg-red-100 px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-red-700">{error}</p>}
         {items.length === 0 ? (
-          <div className="mt-6 text-slate-500">
-            Your cart is empty. <Link to="/products" className="text-orange-600 hover:text-orange-700">Shop now.</Link>
+          <div className="mt-4 sm:mt-6 text-slate-500 text-sm sm:text-base">
+            Your cart is empty. <Link to="/products" className="text-orange-600 hover:text-orange-700 font-semibold">Shop now.</Link>
           </div>
         ) : (
-          <div className="mt-6 space-y-4">
+          <div className="mt-4 sm:mt-6 space-y-3 sm:space-y-4">
             {items.map((item) => {
-              const imageUrl = getProductImageUrl(item.product.images?.[0]);
+              const imageUrl = getProductImageUrl(item.product.images);
               return (
-                <div key={item.id} className="flex flex-col gap-4 rounded-3xl border border-slate-200 bg-slate-50 p-4 md:flex-row md:items-center md:justify-between">
-                  <div className="flex items-center gap-4">
-                    <img src={imageUrl} alt={item.product.name} className="h-24 w-24 rounded-3xl object-cover" />
-                    <div>
-                      <p className="font-semibold text-slate-900">{item.product.name}</p>
-                      <p className="text-sm text-slate-500">{item.product.category}</p>
+                <div key={item.id} className="flex flex-col gap-3 sm:gap-4 rounded-2xl sm:rounded-3xl border border-slate-200 bg-slate-50 p-3 sm:p-4 md:flex-row md:items-center md:justify-between">
+                  <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                    <img src={imageUrl} alt={item.product.name} className="h-20 w-20 sm:h-24 sm:w-24 rounded-2xl object-cover flex-shrink-0" />
+                    <div className="min-w-0">
+                      <p className="font-semibold text-slate-900 text-sm sm:text-base truncate">{item.product.name}</p>
+                      <p className="text-xs sm:text-sm text-slate-500">{item.product.category}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 sm:gap-3">
                     <input
                       type="number"
                       min={1}
                       value={item.quantity}
                       onChange={(event) => updateQuantity(item.id, Number(event.target.value))}
-                      className="w-20 rounded-xl border border-slate-300 bg-white p-2 text-center"
+                      className="w-16 sm:w-20 rounded-xl border border-slate-300 bg-white p-2 text-center text-sm"
                     />
-                    <p className="text-lg font-semibold text-slate-900">Rs. {(item.product.price * item.quantity).toFixed(0)}</p>
-                    <button onClick={() => removeItem(item.id)} className="text-sm text-orange-600 hover:text-orange-700">Remove</button>
+                    <div className="w-24 sm:w-32">
+                      <ProductPrice product={item.product} quantity={item.quantity} size="sm" align="right" />
+                    </div>
+                    <button onClick={() => removeItem(item.id)} className="text-xs sm:text-sm text-orange-600 hover:text-orange-700 font-semibold whitespace-nowrap">Remove</button>
                   </div>
                 </div>
               );
@@ -92,12 +95,12 @@ const CartPage = () => {
         )}
       </div>
       {items.length > 0 && (
-        <aside className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between text-slate-700">
-            <span className="text-lg font-medium">Subtotal</span>
-            <span className="text-2xl font-semibold">Rs. {total.toFixed(0)}</span>
+        <aside className="rounded-2xl sm:rounded-3xl border border-slate-200 bg-white p-4 sm:p-6 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+            <span className="text-base sm:text-lg font-medium text-slate-700">Subtotal</span>
+            <span className="text-2xl sm:text-3xl font-semibold text-slate-900">Rs. {total.toFixed(0)}</span>
           </div>
-          <button onClick={() => navigate('/checkout')} className="mt-6 w-full rounded-full bg-slate-900 px-5 py-4 text-sm font-semibold text-white shadow hover:bg-slate-800">
+          <button onClick={() => navigate('/checkout')} className="mt-4 sm:mt-6 w-full rounded-full bg-slate-900 px-4 sm:px-5 py-3 sm:py-4 text-sm sm:text-base font-semibold text-white shadow hover:bg-slate-800 transition">
             Proceed to Checkout
           </button>
         </aside>

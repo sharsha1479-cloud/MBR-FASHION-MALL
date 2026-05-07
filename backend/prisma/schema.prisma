@@ -22,6 +22,7 @@ model User {
 
   // Relations
   cart Cart?
+  wishlist Wishlist?
   orders Order[]
 }
 
@@ -30,16 +31,41 @@ model Product {
   name        String
   description String?
   price       Float
+  mrp         Float?
+  offerPrice  Float?
   images      String[] // Array of image URLs
   category    String
   sizes       String[] // Array of available sizes
   stock       Int      @default(0)
+  isTrending  Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   // Relations
   cartItems CartItem[]
   orderItems OrderItem[]
+  wishlistItems WishlistItem[]
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  label     String
+  value     String   @unique
+  image     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Banner {
+  id        String   @id @default(cuid())
+  title     String?
+  subtitle  String?
+  image     String
+  link      String?
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Cart {
@@ -49,6 +75,25 @@ model Cart {
 
   // Relations
   items CartItem[]
+}
+
+model Wishlist {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  items WishlistItem[]
+}
+
+model WishlistItem {
+  id         String   @id @default(cuid())
+  wishlistId String
+  productId  String
+
+  wishlist Wishlist @relation(fields: [wishlistId], references: [id], onDelete: Cascade)
+  product  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([wishlistId, productId])
 }
 
 model CartItem {

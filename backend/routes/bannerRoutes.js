@@ -2,13 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const { protect, admin } = require('../middleware/authMiddleware');
-const {
-  getProducts,
-  getProductById,
-  createProduct,
-  updateProduct,
-  deleteProduct,
-} = require('../controllers/productController');
+const { getBanners, createBanner, updateBanner, deleteBanner } = require('../controllers/bannerController');
 
 const storage = multer.diskStorage({
   destination: path.join(__dirname, '..', 'uploads'),
@@ -19,14 +13,9 @@ const storage = multer.diskStorage({
 });
 
 const upload = multer({ storage });
-const productImages = upload.fields([
-  { name: 'image', maxCount: 1 },
-  { name: 'images', maxCount: 4 },
-  { name: 'images[]', maxCount: 4 },
-]);
 const router = express.Router();
 
-router.route('/').get(getProducts).post(protect, admin, productImages, createProduct);
-router.route('/:id').get(getProductById).put(protect, admin, productImages, updateProduct).delete(protect, admin, deleteProduct);
+router.route('/').get(getBanners).post(protect, admin, upload.single('image'), createBanner);
+router.route('/:id').put(protect, admin, upload.single('image'), updateBanner).delete(protect, admin, deleteBanner);
 
 module.exports = router;

@@ -5,6 +5,7 @@ import { clearCart, fetchCart } from '../services/cart';
 import { createRazorpayOrder } from '../services/payment';
 import { createOrder } from '../services/order';
 import { getProductImageUrl } from '../services/product';
+import { ProductPrice, getEffectivePrice } from '../utils/pricing';
 
 declare global {
   interface Window {
@@ -41,7 +42,7 @@ const CheckoutPage = () => {
   const [error, setError] = useState('');
 
   const total = useMemo(
-    () => cartItems.reduce((sum, item) => sum + Number(item.product.price) * Number(item.quantity), 0),
+    () => cartItems.reduce((sum, item) => sum + getEffectivePrice(item.product) * Number(item.quantity), 0),
     [cartItems]
   );
 
@@ -113,7 +114,7 @@ const CheckoutPage = () => {
               orderItems: cartItems.map((item) => ({
                 product: item.product.id,
                 quantity: item.quantity,
-                price: item.product.price,
+                price: getEffectivePrice(item.product),
               })),
               totalAmount: total,
               razorpayOrderId: response.razorpay_order_id,
@@ -159,65 +160,67 @@ const CheckoutPage = () => {
   }
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr]">
-      <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h1 className="text-3xl font-semibold text-slate-900">Checkout</h1>
-        {message && <p className="mt-6 rounded-2xl bg-green-100 px-4 py-3 text-sm text-green-700">{message}</p>}
-        {error && <p className="mt-6 rounded-2xl bg-red-100 px-4 py-3 text-sm text-red-700">{error}</p>}
+    <div className="grid gap-6 sm:gap-8 lg:grid-cols-[1.15fr_0.85fr] grid-cols-1">
+      <div className="rounded-2xl sm:rounded-3xl border border-slate-200 bg-white p-4 sm:p-6 shadow-sm">
+        <h1 className="text-2xl sm:text-3xl font-semibold text-slate-900">Checkout</h1>
+        {message && <p className="mt-4 sm:mt-6 rounded-2xl bg-green-100 px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-green-700">{message}</p>}
+        {error && <p className="mt-4 sm:mt-6 rounded-2xl bg-red-100 px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-red-700">{error}</p>}
 
-        <form onSubmit={handleSubmit} className="mt-6 space-y-5">
-          <div className="grid gap-4 sm:grid-cols-2">
+        <form onSubmit={handleSubmit} className="mt-6 space-y-3 sm:space-y-5">
+          <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
             {['fullName', 'city', 'postalCode', 'country'].map((field) => (
               <div key={field}>
-                <label className="text-sm font-semibold text-slate-700">{field === 'fullName' ? 'Full Name' : field.charAt(0).toUpperCase() + field.slice(1)}</label>
+                <label className="text-xs sm:text-sm font-semibold text-slate-700">{field === 'fullName' ? 'Full Name' : field.charAt(0).toUpperCase() + field.slice(1)}</label>
                 <input
                   name={field}
                   value={(shipping as any)[field]}
                   onChange={handleChange}
                   required
-                  className="mt-2 w-full p-3"
+                  className="mt-2 w-full p-2 sm:p-3 border border-slate-300 rounded-lg text-sm"
                 />
               </div>
             ))}
             <div className="sm:col-span-2">
-              <label className="text-sm font-semibold text-slate-700">Address</label>
-              <input name="address" value={shipping.address} onChange={handleChange} required className="mt-2 w-full p-3" />
+              <label className="text-xs sm:text-sm font-semibold text-slate-700">Address</label>
+              <input name="address" value={shipping.address} onChange={handleChange} required className="mt-2 w-full p-2 sm:p-3 border border-slate-300 rounded-lg text-sm" />
             </div>
           </div>
           <button
             type="submit"
             disabled={paymentLoading || cartItems.length === 0}
-            className="w-full rounded-full bg-orange-600 px-5 py-4 text-sm font-semibold text-white shadow hover:bg-orange-700 disabled:cursor-not-allowed disabled:opacity-60"
+            className="w-full rounded-full bg-orange-600 px-4 sm:px-5 py-3 sm:py-4 text-xs sm:text-sm font-semibold text-white shadow hover:bg-orange-700 disabled:cursor-not-allowed disabled:opacity-60 transition"
           >
             {paymentLoading ? 'Opening Razorpay...' : `Place Order - Rs. ${total.toFixed(0)}`}
           </button>
         </form>
       </div>
 
-      <aside className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-xl font-semibold text-slate-900">Order summary</h2>
+      <aside className="rounded-2xl sm:rounded-3xl border border-slate-200 bg-white p-4 sm:p-6 shadow-sm h-fit">
+        <h2 className="text-xl sm:text-2xl font-semibold text-slate-900">Order summary</h2>
         {cartItems.length === 0 ? (
-          <p className="mt-5 text-sm text-slate-500">
+          <p className="mt-4 sm:mt-5 text-xs sm:text-sm text-slate-500">
             Your cart is empty. <Link to="/products" className="text-orange-600 hover:text-orange-700">Shop now.</Link>
           </p>
         ) : (
-          <div className="mt-5 space-y-4">
+          <div className="mt-4 sm:mt-5 space-y-3 sm:space-y-4">
             {cartItems.map((item) => {
               const product = item.product;
               return (
-                <div key={item.id} className="flex gap-4 border-b border-slate-200 pb-4">
-                  <img src={getProductImageUrl(product.images?.[0])} alt={product.name} className="h-20 w-20 rounded-2xl object-cover" />
-                  <div className="flex-1">
-                    <p className="font-medium text-slate-900">{product.name}</p>
-                    <p className="text-sm text-slate-500">Qty {item.quantity}</p>
-                    <p className="mt-1 text-sm font-semibold text-slate-900">Rs. {(product.price * item.quantity).toFixed(0)}</p>
+                <div key={item.id} className="flex gap-3 sm:gap-4 border-b border-slate-200 pb-3 sm:pb-4">
+                  <img src={getProductImageUrl(product.images)} alt={product.name} className="h-16 w-16 sm:h-20 sm:w-20 rounded-2xl object-cover flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-slate-900 text-sm sm:text-base truncate">{product.name}</p>
+                    <p className="text-xs sm:text-sm text-slate-500">Qty {item.quantity}</p>
+                    <div className="mt-1">
+                      <ProductPrice product={product} quantity={item.quantity} size="sm" />
+                    </div>
                   </div>
                 </div>
               );
             })}
           </div>
         )}
-        <div className="mt-6 flex items-center justify-between text-lg font-semibold text-slate-900">
+        <div className="mt-6 flex items-center justify-between text-base sm:text-lg font-semibold text-slate-900">
           <span>Total</span>
           <span>Rs. {total.toFixed(0)}</span>
         </div>

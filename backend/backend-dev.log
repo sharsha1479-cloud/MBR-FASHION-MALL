@@ -1,0 +1,796 @@
+
+> mens-fashion-backend@1.0.0 dev
+> nodemon server.js
+
+[33m[nodemon] 3.1.14[39m
+[33m[nodemon] to restart at any time, enter `rs`[39m
+[33m[nodemon] watching path(s): server.js routes\**\* controllers\**\*[39m
+[33m[nodemon] watching extensions: js,json[39m
+[32m[nodemon] starting `node server.js`[39m
+Server running on port 5000
+[2026-05-05T18:31:58.599Z] GET /api/products
+🔍 Received query params: {
+  search: undefined,
+  category: undefined,
+  minPrice: undefined,
+  maxPrice: undefined,
+  size: undefined,
+  trending: 'true'
+}
+✅ Applying trending filter: true
+📋 Final where filters: {
+  "isTrending": true
+}
+[2026-05-05T18:31:58.611Z] GET /api/products
+🔍 Received query params: {
+  search: undefined,
+  category: undefined,
+  minPrice: undefined,
+  maxPrice: undefined,
+  size: undefined,
+  trending: undefined
+}
+📋 Final where filters: {}
+[2026-05-05T18:31:58.614Z] GET /api/banners
+[2026-05-05T18:31:58.617Z] GET /api/categories
+📦 Found 24 products
+[2026-05-05T18:31:58.859Z] GET /api/products
+🔍 Received query params: {
+  search: undefined,
+  category: undefined,
+  minPrice: undefined,
+  maxPrice: undefined,
+  size: undefined,
+  trending: undefined
+}
+📋 Final where filters: {}
+📦 Found 24 products
+📦 Found 4 products
+[2026-05-05T18:31:58.961Z] GET /api/products
+🔍 Received query params: {
+  search: undefined,
+  category: undefined,
+  minPrice: undefined,
+  maxPrice: undefined,
+  size: undefined,
+  trending: 'true'
+}
+✅ Applying trending filter: true
+📋 Final where filters: {
+  "isTrending": true
+}
+[2026-05-05T18:31:58.969Z] GET /api/categories
+📦 Found 4 products
+[2026-05-05T18:31:59.079Z] GET /api/banners
+[2026-05-05T18:32:02.019Z] GET /api/banners
+[2026-05-05T18:32:02.022Z] GET /api/products
+🔍 Received query params: {
+  search: undefined,
+  category: undefined,
+  minPrice: undefined,
+  maxPrice: undefined,
+  size: undefined,
+  trending: 'true'
+}
+✅ Applying trending filter: true
+📋 Final where filters: {
+  "isTrending": true
+}
+[2026-05-05T18:32:02.030Z] GET /api/categories
+[2026-05-05T18:32:02.033Z] GET /api/products
+🔍 Received query params: {
+  search: undefined,
+  category: undefined,
+  minPrice: undefined,
+  maxPrice: undefined,
+  size: undefined,
+  trending: undefined
+}
+📋 Final where filters: {}
+📦 Found 4 products
+📦 Found 24 products
+[2026-05-05T18:32:02.065Z] GET /api/cart
+[2026-05-05T18:32:02.084Z] GET /api/banners
+[2026-05-05T18:32:02.086Z] GET /api/wishlist
+[2026-05-05T18:32:02.089Z] GET /api/products
+🔍 Received query params: {
+  search: undefined,
+  category: undefined,
+  minPrice: undefined,
+  maxPrice: undefined,
+  size: undefined,
+  trending: 'true'
+}
+✅ Applying trending filter: true
+📋 Final where filters: {
+  "isTrending": true
+}
+[2026-05-05T18:32:02.092Z] GET /api/products
+🔍 Received query params: {
+  search: undefined,
+  category: undefined,
+  minPrice: undefined,
+  maxPrice: undefined,
+  size: undefined,
+  trending: undefined
+}
+📋 Final where filters: {}
+[2026-05-05T18:32:02.095Z] GET /api/categories
+📦 Found 4 products
+📦 Found 24 products
+[2026-05-05T18:32:02.134Z] GET /api/cart
+[2026-05-05T18:32:02.144Z] GET /api/wishlist
+[2026-05-05T18:33:02.198Z] DELETE /api/banners/cmosvmy950000y887644jt5oj
+[2026-05-05T18:33:02.285Z] GET /api/products
+🔍 Received query params: {
+  search: undefined,
+  category: undefined,
+  minPrice: undefined,
+  maxPrice: undefined,
+  size: undefined,
+  trending: undefined
+}
+📋 Final where filters: {}
+[2026-05-05T18:33:02.289Z] GET /api/banners
+[2026-05-05T18:33:02.291Z] GET /api/admin/users
+[2026-05-05T18:33:02.294Z] GET /api/admin/orders
+📦 Found 24 products
+[2026-05-05T18:33:02.344Z] GET /api/categories
+[2026-05-05T18:33:09.626Z] GET /api/products
+🔍 Received query params: {
+  search: undefined,
+  category: undefined,
+  minPrice: undefined,
+  maxPrice: undefined,
+  size: undefined,
+  trending: undefined
+}
+📋 Final where filters: {}
+[2026-05-05T18:33:09.633Z] GET /api/categories
+[2026-05-05T18:33:09.635Z] GET /api/products
+🔍 Received query params: {
+  search: undefined,
+  category: undefined,
+  minPrice: undefined,
+  maxPrice: undefined,
+  size: undefined,
+  trending: 'true'
+}
+✅ Applying trending filter: true
+📋 Final where filters: {
+  "isTrending": true
+}
+[2026-05-05T18:33:09.639Z] GET /api/cart
+[2026-05-05T18:33:09.641Z] GET /api/banners
+📦 Found 24 products
+[2026-05-05T18:33:09.648Z] GET /api/wishlist
+📦 Found 4 products
+[2026-05-05T18:33:09.658Z] GET /api/products
+🔍 Received query params: {
+  search: undefined,
+  category: undefined,
+  minPrice: undefined,
+  maxPrice: undefined,
+  size: undefined,
+  trending: undefined
+}
+📋 Final where filters: {}
+[2026-05-05T18:33:09.667Z] GET /api/banners
+[2026-05-05T18:33:09.669Z] GET /api/products
+🔍 Received query params: {
+  search: undefined,
+  category: undefined,
+  minPrice: undefined,
+  maxPrice: undefined,
+  size: undefined,
+  trending: 'true'
+}
+✅ Applying trending filter: true
+📋 Final where filters: {
+  "isTrending": true
+}
+[2026-05-05T18:33:09.673Z] GET /api/categories
+📦 Found 24 products
+📦 Found 4 products
+[2026-05-05T18:33:09.686Z] GET /api/cart
+[2026-05-05T18:33:09.691Z] GET /api/wishlist
+[2026-05-05T18:35:24.880Z] GET /api/products
+🔍 Received query params: {
+  search: undefined,
+  category: 'jackets',
+  minPrice: '0',
+  maxPrice: undefined,
+  size: undefined,
+  trending: undefined
+}
+✅ Applying category filter: jackets
+✅ Applied minPrice filter: 0
+📋 Final where filters: {
+  "category": {
+    "equals": "jackets",
+    "mode": "insensitive"
+  },
+  "price": {
+    "gte": 0
+  }
+}
+[2026-05-05T18:35:24.892Z] GET /api/categories
+📦 Found 4 products
+[2026-05-05T18:35:24.917Z] GET /api/products
+🔍 Received query params: {
+  search: undefined,
+  category: 'jackets',
+  minPrice: '0',
+  maxPrice: undefined,
+  size: undefined,
+  trending: undefined
+}
+✅ Applying category filter: jackets
+✅ Applied minPrice filter: 0
+📋 Final where filters: {
+  "category": {
+    "equals": "jackets",
+    "mode": "insensitive"
+  },
+  "price": {
+    "gte": 0
+  }
+}
+[2026-05-05T18:35:24.920Z] GET /api/categories
+📦 Found 4 products
+[2026-05-05T18:35:25.961Z] GET /api/products/cmosxscil0002xiiujkiignvd
+[2026-05-05T18:35:25.973Z] GET /api/products/cmosxscil0002xiiujkiignvd
+[2026-05-05T18:35:26.005Z] GET /api/products
+🔍 Received query params: {
+  search: undefined,
+  category: 'jackets',
+  minPrice: undefined,
+  maxPrice: undefined,
+  size: undefined,
+  trending: undefined
+}
+✅ Applying category filter: jackets
+📋 Final where filters: {
+  "category": {
+    "equals": "jackets",
+    "mode": "insensitive"
+  }
+}
+📦 Found 4 products
+[2026-05-05T18:35:26.039Z] GET /api/products
+🔍 Received query params: {
+  search: undefined,
+  category: 'jackets',
+  minPrice: undefined,
+  maxPrice: undefined,
+  size: undefined,
+  trending: undefined
+}
+✅ Applying category filter: jackets
+📋 Final where filters: {
+  "category": {
+    "equals": "jackets",
+    "mode": "insensitive"
+  }
+}
+📦 Found 4 products
+[2026-05-05T18:36:06.918Z] GET /api/products
+🔍 Received query params: {
+  search: undefined,
+  category: undefined,
+  minPrice: undefined,
+  maxPrice: undefined,
+  size: undefined,
+  trending: undefined
+}
+📋 Final where filters: {}
+📦 Found 24 products
+[2026-05-05T18:36:06.940Z] GET /api/admin/orders
+[2026-05-05T18:36:06.942Z] GET /api/admin/users
+[2026-05-05T18:36:06.944Z] GET /api/banners
+[2026-05-05T18:36:06.946Z] GET /api/products
+🔍 Received query params: {
+  search: undefined,
+  category: undefined,
+  minPrice: undefined,
+  maxPrice: undefined,
+  size: undefined,
+  trending: undefined
+}
+📋 Final where filters: {}
+📦 Found 24 products
+[2026-05-05T18:36:06.961Z] GET /api/banners
+[2026-05-05T18:36:06.963Z] GET /api/admin/users
+[2026-05-05T18:36:06.969Z] GET /api/admin/orders
+[2026-05-05T18:36:06.983Z] GET /api/categories
+[2026-05-05T18:36:07.026Z] GET /api/categories
+[2026-05-05T18:36:20.253Z] GET /api/categories
+[2026-05-05T18:36:20.256Z] GET /api/products/cmosymlxq000axiius47x52bl
+[2026-05-05T18:36:20.270Z] GET /api/products/cmosymlxq000axiius47x52bl
+[2026-05-05T18:36:20.272Z] GET /api/categories
+[2026-05-05T18:36:25.992Z] GET /api/products
+🔍 Received query params: {
+  search: undefined,
+  category: undefined,
+  minPrice: undefined,
+  maxPrice: undefined,
+  size: undefined,
+  trending: undefined
+}
+📋 Final where filters: {}
+📦 Found 24 products
+[2026-05-05T18:36:26.023Z] GET /api/admin/users
+[2026-05-05T18:36:26.027Z] GET /api/admin/orders
+[2026-05-05T18:36:26.034Z] GET /api/banners
+[2026-05-05T18:36:26.037Z] GET /api/products
+🔍 Received query params: {
+  search: undefined,
+  category: undefined,
+  minPrice: undefined,
+  maxPrice: undefined,
+  size: undefined,
+  trending: undefined
+}
+📋 Final where filters: {}
+📦 Found 24 products
+[2026-05-05T18:36:26.055Z] GET /api/admin/users
+[2026-05-05T18:36:26.059Z] GET /api/banners
+[2026-05-05T18:36:26.061Z] GET /api/admin/orders
+[2026-05-05T18:36:26.079Z] GET /api/categories
+[2026-05-05T18:36:26.100Z] GET /api/categories
+[2026-05-05T18:36:44.642Z] PUT /api/products/cmosxn0iu0000xiiuyqv1y899
+🔄 Updating product: cmosxn0iu0000xiiuyqv1y899
+📝 Form data: {
+  name: undefined,
+  description: undefined,
+  price: undefined,
+  mrp: undefined,
+  offerPrice: undefined,
+  category: undefined,
+  sizes: undefined,
+  stock: undefined,
+  isTrending: 'true'
+}
+✅ Parsed data: {
+  parsedPrice: 1599,
+  parsedMrp: 2000,
+  parsedOfferPrice: 1599,
+  parsedStock: 10,
+  parsedSizes: [ 'S', 'M', 'L' ],
+  trendingValue: true,
+  uploadedImages: []
+}
+✅ Product updated successfully: cmosxn0iu0000xiiuyqv1y899
+[2026-05-05T18:36:56.345Z] PUT /api/products/cmosx9hi4000ey887wll20jk6
+🔄 Updating product: cmosx9hi4000ey887wll20jk6
+📝 Form data: {
+  name: undefined,
+  description: undefined,
+  price: undefined,
+  mrp: undefined,
+  offerPrice: undefined,
+  category: undefined,
+  sizes: undefined,
+  stock: undefined,
+  isTrending: 'false'
+}
+✅ Parsed data: {
+  parsedPrice: 3500,
+  parsedMrp: 4000,
+  parsedOfferPrice: 3500,
+  parsedStock: 5,
+  parsedSizes: [ 'S', 'M', 'L' ],
+  trendingValue: false,
+  uploadedImages: []
+}
+✅ Product updated successfully: cmosx9hi4000ey887wll20jk6
+[2026-05-05T18:37:15.657Z] PUT /api/products/cmoswvs4b000ay887lud8mym0
+🔄 Updating product: cmoswvs4b000ay887lud8mym0
+📝 Form data: {
+  name: undefined,
+  description: undefined,
+  price: undefined,
+  mrp: undefined,
+  offerPrice: undefined,
+  category: undefined,
+  sizes: undefined,
+  stock: undefined,
+  isTrending: 'false'
+}
+✅ Parsed data: {
+  parsedPrice: 1999,
+  parsedMrp: 4999,
+  parsedOfferPrice: 1999,
+  parsedStock: 10,
+  parsedSizes: [ '33', '36' ],
+  trendingValue: false,
+  uploadedImages: []
+}
+✅ Product updated successfully: cmoswvs4b000ay887lud8mym0
+[2026-05-05T18:37:27.027Z] PUT /api/products/cmoswqom20008y887tvarnc2r
+🔄 Updating product: cmoswqom20008y887tvarnc2r
+📝 Form data: {
+  name: undefined,
+  description: undefined,
+  price: undefined,
+  mrp: undefined,
+  offerPrice: undefined,
+  category: undefined,
+  sizes: undefined,
+  stock: undefined,
+  isTrending: 'false'
+}
+✅ Parsed data: {
+  parsedPrice: 2500,
+  parsedMrp: 3000,
+  parsedOfferPrice: 2500,
+  parsedStock: 10,
+  parsedSizes: [ '28', '29' ],
+  trendingValue: false,
+  uploadedImages: []
+}
+✅ Product updated successfully: cmoswqom20008y887tvarnc2r
+[2026-05-05T18:37:39.357Z] PUT /api/products/cmoswgcbj0006y887sxpyze90
+🔄 Updating product: cmoswgcbj0006y887sxpyze90
+📝 Form data: {
+  name: undefined,
+  description: undefined,
+  price: undefined,
+  mrp: undefined,
+  offerPrice: undefined,
+  category: undefined,
+  sizes: undefined,
+  stock: undefined,
+  isTrending: 'true'
+}
+✅ Parsed data: {
+  parsedPrice: 1599,
+  parsedMrp: 2000,
+  parsedOfferPrice: 1599,
+  parsedStock: 10,
+  parsedSizes: [ '30', '32', '36' ],
+  trendingValue: true,
+  uploadedImages: []
+}
+✅ Product updated successfully: cmoswgcbj0006y887sxpyze90
+[2026-05-05T18:38:01.917Z] PUT /api/products/cmosw7xbr0003y8878taytgen
+🔄 Updating product: cmosw7xbr0003y8878taytgen
+📝 Form data: {
+  name: undefined,
+  description: undefined,
+  price: undefined,
+  mrp: undefined,
+  offerPrice: undefined,
+  category: undefined,
+  sizes: undefined,
+  stock: undefined,
+  isTrending: 'true'
+}
+✅ Parsed data: {
+  parsedPrice: 999,
+  parsedMrp: 2000,
+  parsedOfferPrice: 999,
+  parsedStock: 10,
+  parsedSizes: [ '28', '29', '30' ],
+  trendingValue: true,
+  uploadedImages: []
+}
+✅ Product updated successfully: cmosw7xbr0003y8878taytgen
+[2026-05-05T18:38:15.232Z] PUT /api/products/cmosxqszn0001xiiuby84wqpl
+🔄 Updating product: cmosxqszn0001xiiuby84wqpl
+📝 Form data: {
+  name: undefined,
+  description: undefined,
+  price: undefined,
+  mrp: undefined,
+  offerPrice: undefined,
+  category: undefined,
+  sizes: undefined,
+  stock: undefined,
+  isTrending: 'false'
+}
+✅ Parsed data: {
+  parsedPrice: 899,
+  parsedMrp: 1500,
+  parsedOfferPrice: 899,
+  parsedStock: 5,
+  parsedSizes: [ 'S', 'M', 'L' ],
+  trendingValue: false,
+  uploadedImages: []
+}
+✅ Product updated successfully: cmosxqszn0001xiiuby84wqpl
+[2026-05-05T18:38:52.751Z] PUT /api/products/cmosykpih0009xiiu1zabbe7t
+🔄 Updating product: cmosykpih0009xiiu1zabbe7t
+📝 Form data: {
+  name: undefined,
+  description: undefined,
+  price: undefined,
+  mrp: undefined,
+  offerPrice: undefined,
+  category: undefined,
+  sizes: undefined,
+  stock: undefined,
+  isTrending: 'true'
+}
+✅ Parsed data: {
+  parsedPrice: 399,
+  parsedMrp: 699,
+  parsedOfferPrice: 399,
+  parsedStock: 10,
+  parsedSizes: [ 'M', 'L' ],
+  trendingValue: true,
+  uploadedImages: []
+}
+✅ Product updated successfully: cmosykpih0009xiiu1zabbe7t
+[2026-05-05T18:39:00.216Z] GET /api/products/cmoswagd70004y887ok3m0riu
+[2026-05-05T18:39:00.224Z] GET /api/categories
+[2026-05-05T18:39:00.231Z] GET /api/products/cmoswagd70004y887ok3m0riu
+[2026-05-05T18:39:00.523Z] GET /api/categories
+[2026-05-05T18:39:02.504Z] GET /api/categories
+[2026-05-05T18:39:02.508Z] GET /api/products/cmoswagd70004y887ok3m0riu
+[2026-05-05T18:39:02.522Z] GET /api/cart
+[2026-05-05T18:39:02.527Z] GET /api/wishlist
+[2026-05-05T18:39:02.539Z] GET /api/categories
+[2026-05-05T18:39:02.541Z] GET /api/products/cmoswagd70004y887ok3m0riu
+[2026-05-05T18:39:02.554Z] GET /api/cart
+[2026-05-05T18:39:02.572Z] GET /api/wishlist
+[2026-05-05T18:39:04.669Z] GET /api/categories
+[2026-05-05T18:39:04.681Z] GET /api/products
+🔍 Received query params: {
+  search: undefined,
+  category: undefined,
+  minPrice: undefined,
+  maxPrice: undefined,
+  size: undefined,
+  trending: undefined
+}
+📋 Final where filters: {}
+[2026-05-05T18:39:04.685Z] GET /api/products
+🔍 Received query params: {
+  search: undefined,
+  category: undefined,
+  minPrice: undefined,
+  maxPrice: undefined,
+  size: undefined,
+  trending: 'true'
+}
+✅ Applying trending filter: true
+📋 Final where filters: {
+  "isTrending": true
+}
+[2026-05-05T18:39:04.689Z] GET /api/banners
+📦 Found 24 products
+[2026-05-05T18:39:04.694Z] GET /api/categories
+📦 Found 4 products
+[2026-05-05T18:39:04.710Z] GET /api/products
+🔍 Received query params: {
+  search: undefined,
+  category: undefined,
+  minPrice: undefined,
+  maxPrice: undefined,
+  size: undefined,
+  trending: undefined
+}
+📋 Final where filters: {}
+[2026-05-05T18:39:04.714Z] GET /api/products
+🔍 Received query params: {
+  search: undefined,
+  category: undefined,
+  minPrice: undefined,
+  maxPrice: undefined,
+  size: undefined,
+  trending: 'true'
+}
+✅ Applying trending filter: true
+📋 Final where filters: {
+  "isTrending": true
+}
+[2026-05-05T18:39:04.720Z] GET /api/banners
+📦 Found 24 products
+📦 Found 4 products
+[2026-05-05T18:39:29.295Z] GET /api/products
+🔍 Received query params: {
+  search: undefined,
+  category: 'sneakers',
+  minPrice: '0',
+  maxPrice: undefined,
+  size: undefined,
+  trending: undefined
+}
+✅ Applying category filter: sneakers
+✅ Applied minPrice filter: 0
+📋 Final where filters: {
+  "category": {
+    "equals": "sneakers",
+    "mode": "insensitive"
+  },
+  "price": {
+    "gte": 0
+  }
+}
+📦 Found 4 products
+[2026-05-05T18:39:29.313Z] GET /api/categories
+[2026-05-05T18:39:29.319Z] GET /api/products
+🔍 Received query params: {
+  search: undefined,
+  category: 'sneakers',
+  minPrice: '0',
+  maxPrice: undefined,
+  size: undefined,
+  trending: undefined
+}
+✅ Applying category filter: sneakers
+✅ Applied minPrice filter: 0
+📋 Final where filters: {
+  "category": {
+    "equals": "sneakers",
+    "mode": "insensitive"
+  },
+  "price": {
+    "gte": 0
+  }
+}
+📦 Found 4 products
+[2026-05-05T18:39:29.328Z] GET /api/categories
+[2026-05-05T18:39:35.928Z] GET /api/products
+🔍 Received query params: {
+  search: undefined,
+  category: undefined,
+  minPrice: undefined,
+  maxPrice: undefined,
+  size: undefined,
+  trending: undefined
+}
+📋 Final where filters: {}
+[2026-05-05T18:39:35.935Z] GET /api/categories
+📦 Found 24 products
+[2026-05-05T18:39:35.947Z] GET /api/banners
+[2026-05-05T18:39:35.951Z] GET /api/products
+🔍 Received query params: {
+  search: undefined,
+  category: undefined,
+  minPrice: undefined,
+  maxPrice: undefined,
+  size: undefined,
+  trending: 'true'
+}
+✅ Applying trending filter: true
+📋 Final where filters: {
+  "isTrending": true
+}
+📦 Found 4 products
+[2026-05-05T18:39:35.966Z] GET /api/products
+🔍 Received query params: {
+  search: undefined,
+  category: undefined,
+  minPrice: undefined,
+  maxPrice: undefined,
+  size: undefined,
+  trending: undefined
+}
+📋 Final where filters: {}
+[2026-05-05T18:39:35.975Z] GET /api/banners
+📦 Found 24 products
+[2026-05-05T18:39:35.982Z] GET /api/categories
+[2026-05-05T18:39:35.985Z] GET /api/products
+🔍 Received query params: {
+  search: undefined,
+  category: undefined,
+  minPrice: undefined,
+  maxPrice: undefined,
+  size: undefined,
+  trending: 'true'
+}
+✅ Applying trending filter: true
+📋 Final where filters: {
+  "isTrending": true
+}
+📦 Found 4 products
+[2026-05-05T18:41:03.876Z] GET /api/banners
+[2026-05-05T18:41:03.879Z] GET /api/products
+🔍 Received query params: {
+  search: undefined,
+  category: undefined,
+  minPrice: undefined,
+  maxPrice: undefined,
+  size: undefined,
+  trending: undefined
+}
+📋 Final where filters: {}
+[2026-05-05T18:41:03.883Z] GET /api/products
+🔍 Received query params: {
+  search: undefined,
+  category: undefined,
+  minPrice: undefined,
+  maxPrice: undefined,
+  size: undefined,
+  trending: 'true'
+}
+✅ Applying trending filter: true
+📋 Final where filters: {
+  "isTrending": true
+}
+📦 Found 24 products
+[2026-05-05T18:41:03.895Z] GET /api/categories
+📦 Found 4 products
+[2026-05-05T18:41:03.912Z] GET /api/banners
+[2026-05-05T18:41:03.914Z] GET /api/products
+🔍 Received query params: {
+  search: undefined,
+  category: undefined,
+  minPrice: undefined,
+  maxPrice: undefined,
+  size: undefined,
+  trending: undefined
+}
+📋 Final where filters: {}
+[2026-05-05T18:41:03.918Z] GET /api/products
+🔍 Received query params: {
+  search: undefined,
+  category: undefined,
+  minPrice: undefined,
+  maxPrice: undefined,
+  size: undefined,
+  trending: 'true'
+}
+✅ Applying trending filter: true
+📋 Final where filters: {
+  "isTrending": true
+}
+[2026-05-05T18:41:03.924Z] GET /api/categories
+📦 Found 24 products
+📦 Found 4 products
+[2026-05-05T18:43:23.660Z] GET /api/products
+🔍 Received query params: {
+  search: undefined,
+  category: undefined,
+  minPrice: undefined,
+  maxPrice: undefined,
+  size: undefined,
+  trending: 'true'
+}
+✅ Applying trending filter: true
+📋 Final where filters: {
+  "isTrending": true
+}
+[2026-05-05T18:43:23.666Z] GET /api/banners
+[2026-05-05T18:43:23.668Z] GET /api/products
+🔍 Received query params: {
+  search: undefined,
+  category: undefined,
+  minPrice: undefined,
+  maxPrice: undefined,
+  size: undefined,
+  trending: undefined
+}
+📋 Final where filters: {}
+📦 Found 24 products
+[2026-05-05T18:43:23.695Z] GET /api/categories
+📦 Found 4 products
+[2026-05-05T18:46:54.457Z] GET /api/products
+🔍 Received query params: {
+  search: undefined,
+  category: undefined,
+  minPrice: undefined,
+  maxPrice: undefined,
+  size: undefined,
+  trending: undefined
+}
+📋 Final where filters: {}
+[2026-05-05T18:46:54.467Z] GET /api/products
+🔍 Received query params: {
+  search: undefined,
+  category: undefined,
+  minPrice: undefined,
+  maxPrice: undefined,
+  size: undefined,
+  trending: 'true'
+}
+✅ Applying trending filter: true
+📋 Final where filters: {
+  "isTrending": true
+}
+[2026-05-05T18:46:54.480Z] GET /api/categories
+📦 Found 24 products
+📦 Found 4 products
+[2026-05-05T18:46:54.500Z] GET /api/banners

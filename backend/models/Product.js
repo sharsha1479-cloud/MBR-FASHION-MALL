@@ -11,6 +11,8 @@ const productSchema = new mongoose.Schema(
     description: { type: String, required: true },
     category: { type: String, required: true, enum: ['shirts', 't-shirts', 'jeans'] },
     price: { type: Number, required: true },
+    mrp: { type: Number },
+    offerPrice: { type: Number },
     sizes: [{ type: String, required: true }],
     images: [imageSchema],
     inventory: { type: Number, required: true, default: 0 },
