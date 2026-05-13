@@ -52,7 +52,7 @@ exports.updateUserRole = asyncHandler(async (req, res) => {
 exports.getAdminOrders = asyncHandler(async (req, res) => {
   const orders = await prisma.order.findMany({
     include: {
-      items: { include: { product: true } },
+      items: { include: { product: true, comboProduct: true } },
       user: { select: { id: true, name: true, email: true } },
     },
     orderBy: { createdAt: 'desc' },
@@ -65,7 +65,7 @@ exports.getAdminOrderById = asyncHandler(async (req, res) => {
   const order = await prisma.order.findUnique({
     where: { id: req.params.id },
     include: {
-      items: { include: { product: true } },
+      items: { include: { product: true, comboProduct: true } },
       user: { select: { id: true, name: true, email: true } },
     },
   });
@@ -96,7 +96,7 @@ exports.updateOrderStatus = asyncHandler(async (req, res) => {
     where: { id: req.params.id },
     data: { status },
     include: {
-      items: { include: { product: true } },
+      items: { include: { product: true, comboProduct: true } },
       user: { select: { id: true, name: true, email: true } },
     },
   });

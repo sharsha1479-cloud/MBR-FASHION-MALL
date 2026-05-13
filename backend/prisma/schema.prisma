@@ -45,6 +45,7 @@ model Product {
   cartItems CartItem[]
   orderItems OrderItem[]
   wishlistItems WishlistItem[]
+  storeInventory StoreInventory[]
 }
 
 model Category {
@@ -66,6 +67,76 @@ model Banner {
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Coupon {
+  id             String   @id @default(cuid())
+  code           String   @unique
+  discountType   String   @default("percentage")
+  discountValue  Float
+  minOrderAmount Float?
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model CouponRedemption {
+  id         String   @id @default(cuid())
+  couponId   String
+  couponCode String
+  userId     String
+  orderId    String
+  createdAt  DateTime @default(now())
+
+  @@unique([couponId, userId])
+}
+
+model Store {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  inventory StoreInventory[]
+}
+
+model StoreInventory {
+  id             String   @id @default(cuid())
+  storeId        String
+  productId      String?
+  customName     String?
+  customCategory String?
+  customPrice    Float?
+  size           String   @default("Default")
+  availableStock Int      @default(0)
+  soldCount      Int      @default(0)
+  remainingStock Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  store   Store   @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  product Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([storeId, productId, size])
+  @@index([storeId])
+  @@index([productId])
+}
+
+model ComboProduct {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  mrp         Float?
+  offerPrice  Float
+  image       String
+  stock       Int      @default(0)
+  sizes       String[] @default([])
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  cartItems  CartItem[]
+  orderItems OrderItem[]
 }
 
 model Cart {
@@ -97,21 +168,28 @@ model WishlistItem {
 }
 
 model CartItem {
-  id        String @id @default(cuid())
-  cartId    String
-  productId String
-  quantity  Int    @default(1)
+  id             String @id @default(cuid())
+  cartId         String
+  productId      String?
+  comboProductId String?
+  quantity       Int    @default(1)
+  size           String?
 
-  cart    Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  cart         Cart          @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product      Product?      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  comboProduct ComboProduct? @relation(fields: [comboProductId], references: [id], onDelete: Cascade)
 
   @@unique([cartId, productId])
+  @@unique([cartId, comboProductId, size])
 }
 
 model Order {
   id               String   @id @default(cuid())
   userId           String
   totalAmount      Float
+  subtotalAmount   Float?
+  discountAmount   Float    @default(0)
+  couponCode       String?
   status           String   @default("placed") // placed, shipped, delivered, cancelled
   paymentStatus    String   @default("pending") // paid, failed, pending
   razorpayOrderId  String?
@@ -127,12 +205,15 @@ model Order {
 }
 
 model OrderItem {
-  id        String @id @default(cuid())
-  orderId   String
-  productId String
-  quantity  Int
-  price     Float // Price at the time of order
+  id             String @id @default(cuid())
+  orderId        String
+  productId      String?
+  comboProductId String?
+  quantity       Int
+  price          Float // Price at the time of order
+  size           String?
 
-  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  order        Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product      Product?      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  comboProduct ComboProduct? @relation(fields: [comboProductId], references: [id], onDelete: Cascade)
 }

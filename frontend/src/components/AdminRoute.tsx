@@ -6,7 +6,7 @@ const AdminRoute = ({ children }: { children: JSX.Element }) => {
   const { user, isAuthenticated } = useAuth();
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return <Navigate to="/login" state={{ from: location, message: 'Please login first to continue' }} replace />;
   }
 
   if (!user || user.role !== 'admin') {

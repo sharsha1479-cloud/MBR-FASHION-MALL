@@ -6,8 +6,15 @@
   color-scheme: light;
 }
 
+@media screen and (min-width: 1024px) {
+  html {
+    zoom: 0.8;
+  }
+}
+
 body {
   @apply min-h-screen bg-secondary text-primary antialiased;
+  overflow-x: hidden;
 }
 
 button {
@@ -18,4 +25,12 @@ input,
 select,
 textarea {
   @apply rounded border border-slate-300 bg-white text-slate-900 shadow-sm placeholder:text-slate-400 focus:border-maroon focus:ring-2 focus:ring-maroon/20 focus:outline-none;
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }

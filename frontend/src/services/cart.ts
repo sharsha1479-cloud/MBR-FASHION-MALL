@@ -9,8 +9,11 @@ export const fetchCart = async () => {
   return response.data;
 };
 
-export const addCartItem = async (productId: string, quantity: number) => {
-  const response = await api.post('/cart', { productId, quantity });
+export const addCartItem = async (productId: string, quantity: number, options?: { comboProductId?: string; size?: string }) => {
+  const payload = options?.comboProductId
+    ? { comboProductId: options.comboProductId, quantity, size: options.size }
+    : { productId, quantity };
+  const response = await api.post('/cart', payload);
   notifyCartChanged();
   return response.data;
 };

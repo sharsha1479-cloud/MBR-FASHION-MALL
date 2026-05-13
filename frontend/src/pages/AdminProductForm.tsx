@@ -159,7 +159,7 @@ const AdminProductForm = () => {
               type="checkbox"
               checked={isTrending}
               onChange={(event) => setIsTrending(event.target.checked)}
-              className="h-5 w-5 rounded border-slate-300 text-orange-600 focus:ring-orange-500"
+              className="h-5 w-5 rounded border-slate-300 text-maroon focus:ring-maroon/20"
             />
             <label htmlFor="trending" className="text-sm font-semibold text-slate-700">
               Mark as trending style
@@ -225,7 +225,7 @@ const AdminProductForm = () => {
             )}
           </div>
         </div>
-        <button type="submit" className="rounded-full bg-orange-600 px-5 py-4 text-sm font-semibold text-white shadow hover:bg-orange-700">
+        <button type="submit" className="rounded-full bg-maroon px-5 py-4 text-sm font-semibold text-white shadow hover:bg-maroon/90">
           Save product
         </button>
       </form>

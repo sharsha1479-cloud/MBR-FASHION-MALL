@@ -29,12 +29,12 @@ const SplashScreen = ({ onComplete }: SplashScreenProps) => {
           <div className="text-center">
             {/* Logo Animation */}
             <motion.div
-              initial={{ scale: 0, rotate: -180 }}
-              animate={{ scale: 1, rotate: 0 }}
+              initial={{ scale: 8, opacity: 0, rotate: -8 }}
+              animate={{ scale: 1, opacity: 1, rotate: 0 }}
               transition={{
-                duration: 1,
-                ease: "easeOut",
-                delay: 0.2
+                duration: 1.15,
+                ease: [0.22, 1, 0.36, 1],
+                delay: 0.1,
               }}
               className="mb-6"
             >
@@ -47,16 +47,16 @@ const SplashScreen = ({ onComplete }: SplashScreenProps) => {
 
             {/* Brand Name */}
             <motion.h1
-              initial={{ y: 50, opacity: 0 }}
+              initial={{ y: 34, opacity: 0, letterSpacing: '0.35em' }}
               animate={{ y: 0, opacity: 1 }}
               transition={{
-                duration: 0.8,
-                delay: 0.8,
-                ease: "easeOut"
+                duration: 0.75,
+                delay: 1.15,
+                ease: [0.22, 1, 0.36, 1],
               }}
               className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-primary mb-2 tracking-[0.15em] uppercase"
             >
-              MBR Fashion Hub
+              Fashion Hub
             </motion.h1>
 
             {/* Tagline */}
@@ -65,8 +65,8 @@ const SplashScreen = ({ onComplete }: SplashScreenProps) => {
               animate={{ y: 0, opacity: 1 }}
               transition={{
                 duration: 0.6,
-                delay: 1.2,
-                ease: "easeOut"
+                delay: 1.45,
+                ease: 'easeOut',
               }}
               className="text-sm sm:text-base text-maroon/80 font-medium"
             >
@@ -89,7 +89,7 @@ const SplashScreen = ({ onComplete }: SplashScreenProps) => {
                     duration: 1.5,
                     repeat: Infinity,
                     delay: index * 0.2,
-                    ease: "easeInOut"
+                    ease: 'easeInOut',
                   }}
                   className="w-3 h-3 bg-maroon rounded-full"
                 />

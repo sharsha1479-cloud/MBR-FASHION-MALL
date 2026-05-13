@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 340" role="img" aria-labelledby="title desc">
+  <title id="title">MBR The Fashion Hub</title>
+  <desc id="desc">MBR Fashion Hub logo in maroon and navy.</desc>
+  <rect width="980" height="340" fill="#ffffff"/>
+  <g fill="none" stroke="#b00025" stroke-linecap="round">
+    <path d="M217 51c-88 0-160 72-160 160s72 160 160 160c57 0 107-30 135-76" stroke-width="22" transform="scale(.82) translate(32 4)"/>
+    <path d="M124 115c48 62 118 61 157 120 21 32 19 70-5 101" stroke-width="16" transform="scale(.82) translate(32 4)"/>
+    <path d="M156 95c54-55 153-60 218 3 20 20 35 43 44 69" stroke-width="16" transform="scale(.82) translate(32 4)"/>
+    <path d="M104 171c44 58 126 34 171 94" stroke-width="16" transform="scale(.82) translate(32 4)"/>
+    <path d="M119 247c45 35 91 4 135 31" stroke-width="16" transform="scale(.82) translate(32 4)"/>
+    <path d="M151 296c34 15 62-13 91-2" stroke-width="16" transform="scale(.82) translate(32 4)"/>
+    <path d="M252 170c21 15 44-13 67 8 16 15 11 41-7 48-30 10-35-34-60-56Z" fill="#b00025" stroke-width="0" transform="scale(.82) translate(32 4)"/>
+    <path d="M294 167c19-9 44-11 57 9" stroke-width="10" transform="scale(.82) translate(32 4)"/>
+  </g>
+  <g fill="#b00025">
+    <path d="M382 100h90l56 106 56-106h88v146h-59V155l-51 91h-69l-51-91v91h-60Z"/>
+    <path d="M706 100h159c40 0 65 21 65 54 0 19-10 34-28 43 23 8 36 25 36 49 0 36-26 59-68 59H706Zm62 54v30h83c13 0 20-5 20-15s-7-15-20-15Zm0 80v31h91c13 0 20-6 20-16s-7-15-20-15Z"/>
+    <path d="M952 100h171c43 0 70 25 70 65 0 29-15 51-40 61l48 79h-70l-40-69h-77v69h-62Zm62 54v35h96c14 0 22-7 22-18 0-10-8-17-22-17Z" transform="translate(-105 0)"/>
+  </g>
+  <g fill="#002b5c">
+    <text x="510" y="278" font-family="Arial Black, Impact, Arial, sans-serif" font-size="34" font-weight="900">THE</text>
+    <text x="510" y="323" font-family="Arial Black, Impact, Arial, sans-serif" font-size="50" font-weight="900">FASHION HUB</text>
+    <rect x="510" y="332" width="360" height="6"/>
+  </g>
+</svg>

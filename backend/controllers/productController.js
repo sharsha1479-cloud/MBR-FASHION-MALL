@@ -26,11 +26,61 @@ exports.getProducts = asyncHandler(async (req, res) => {
 
   const where = {};
 
-  if (search) {
-    where.name = {
-      contains: search,
-      mode: 'insensitive',
-    };
+  const normalizedSearch = search ? String(search).trim() : '';
+
+  if (normalizedSearch) {
+    const matchingCategories = await prisma.category.findMany({
+      where: {
+        OR: [
+          {
+            label: {
+              contains: normalizedSearch,
+              mode: 'insensitive',
+            },
+          },
+          {
+            value: {
+              contains: normalizedSearch,
+              mode: 'insensitive',
+            },
+          },
+        ],
+      },
+      select: {
+        value: true,
+      },
+    });
+    const matchingCategoryValues = [...new Set(matchingCategories.map((item) => item.value))];
+
+    where.OR = [
+      {
+        name: {
+          contains: normalizedSearch,
+          mode: 'insensitive',
+        },
+      },
+      {
+        description: {
+          contains: normalizedSearch,
+          mode: 'insensitive',
+        },
+      },
+      {
+        category: {
+          contains: normalizedSearch,
+          mode: 'insensitive',
+        },
+      },
+      ...(matchingCategoryValues.length > 0
+        ? [
+            {
+              category: {
+                in: matchingCategoryValues,
+              },
+            },
+          ]
+        : []),
+    ];
   }
 
   if (category) {

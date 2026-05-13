@@ -38,12 +38,12 @@ const RegisterPage = () => {
             <label className="block text-xs sm:text-sm font-semibold text-slate-700">Password</label>
             <input value={password} onChange={(event) => setPassword(event.target.value)} type="password" required className="mt-2 w-full p-2 sm:p-3 border border-slate-300 rounded-lg text-sm" />
           </div>
-          <button type="submit" className="w-full rounded-full bg-orange-600 px-4 sm:px-5 py-3 sm:py-4 text-xs sm:text-sm font-semibold text-white shadow hover:bg-orange-700 transition mt-6">
+          <button type="submit" className="w-full rounded-full bg-maroon px-4 sm:px-5 py-3 sm:py-4 text-xs sm:text-sm font-semibold text-white shadow hover:bg-maroon/90 transition mt-6">
             Create account
           </button>
         </form>
         <p className="mt-6 text-xs sm:text-sm text-slate-500">
-          Already have an account? <Link to="/login" className="text-orange-600 hover:text-orange-700 font-semibold">Login.</Link>
+          Already have an account? <Link to="/login" className="text-maroon hover:text-maroon/80 font-semibold">Login.</Link>
         </p>
       </div>
     </div>

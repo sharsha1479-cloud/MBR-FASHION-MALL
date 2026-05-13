@@ -12,7 +12,7 @@ exports.getCart = asyncHandler(async (req, res) => {
   const cart = await getOrCreateCart(req.user.id);
   const items = await prisma.cartItem.findMany({
     where: { cartId: cart.id },
-    include: { product: true },
+    include: { product: true, comboProduct: true },
     orderBy: { id: 'asc' },
   });
 
@@ -20,37 +20,75 @@ exports.getCart = asyncHandler(async (req, res) => {
 });
 
 exports.addToCart = asyncHandler(async (req, res) => {
-  const { productId, quantity = 1 } = req.body;
+  const { productId, comboProductId, quantity = 1, size } = req.body;
 
-  if (!productId) {
+  if (!productId && !comboProductId) {
     res.status(400);
-    throw new Error('Product ID is required');
-  }
-
-  const product = await prisma.product.findUnique({ where: { id: productId } });
-  if (!product) {
-    res.status(404);
-    throw new Error('Product not found');
+    throw new Error('Product or combo product ID is required');
   }
 
   const cart = await getOrCreateCart(req.user.id);
-  const item = await prisma.cartItem.upsert({
-    where: {
-      cartId_productId: {
+
+  if (productId) {
+    const product = await prisma.product.findUnique({ where: { id: productId } });
+    if (!product) {
+      res.status(404);
+      throw new Error('Product not found');
+    }
+
+    const item = await prisma.cartItem.upsert({
+      where: {
+        cartId_productId: {
+          cartId: cart.id,
+          productId,
+        },
+      },
+      update: {
+        quantity: { increment: Number(quantity) || 1 },
+      },
+      create: {
         cartId: cart.id,
         productId,
+        quantity: Number(quantity) || 1,
       },
-    },
-    update: {
-      quantity: { increment: Number(quantity) || 1 },
-    },
-    create: {
-      cartId: cart.id,
-      productId,
-      quantity: Number(quantity) || 1,
-    },
-    include: { product: true },
+      include: { product: true, comboProduct: true },
+    });
+
+    res.status(201).json(item);
+    return;
+  }
+
+  const comboProduct = await prisma.comboProduct.findUnique({ where: { id: comboProductId } });
+  if (!comboProduct || !comboProduct.isActive) {
+    res.status(404);
+    throw new Error('Combo product not found');
+  }
+
+  const selectedSize = String(size || '').trim();
+  if (comboProduct.sizes.length > 0 && !comboProduct.sizes.includes(selectedSize)) {
+    res.status(400);
+    throw new Error('Please choose an available combo size.');
+  }
+
+  const existingComboItem = await prisma.cartItem.findFirst({
+    where: { cartId: cart.id, comboProductId, size: selectedSize || null },
   });
+
+  const item = existingComboItem
+    ? await prisma.cartItem.update({
+        where: { id: existingComboItem.id },
+        data: { quantity: { increment: Number(quantity) || 1 } },
+        include: { product: true, comboProduct: true },
+      })
+    : await prisma.cartItem.create({
+        data: {
+          cartId: cart.id,
+          comboProductId,
+          size: selectedSize || null,
+          quantity: Number(quantity) || 1,
+        },
+        include: { product: true, comboProduct: true },
+      });
 
   res.status(201).json(item);
 });
@@ -77,7 +115,7 @@ exports.updateCartItem = asyncHandler(async (req, res) => {
   const updated = await prisma.cartItem.update({
     where: { id: item.id },
     data: { quantity: Number(quantity) },
-    include: { product: true },
+    include: { product: true, comboProduct: true },
   });
 
   res.json(updated);

@@ -5,15 +5,16 @@ type CategoryCardProps = {
   label: string;
   value: string;
   image: string;
+  to?: string;
 };
 
-const CategoryCard = ({ label, value, image }: CategoryCardProps) => (
+const CategoryCard = ({ label, value, image, to }: CategoryCardProps) => (
   <motion.div
     whileHover={{ scale: 1.05 }}
     transition={{ duration: 0.3 }}
     className="group relative overflow-hidden rounded-xl bg-accent shadow-sm hover:shadow-lg transition-all duration-300"
   >
-    <Link to={`/products?category=${value}`}>
+    <Link to={to ?? `/products?category=${value}`}>
       <div className="aspect-square overflow-hidden">
         <img
           src={image}

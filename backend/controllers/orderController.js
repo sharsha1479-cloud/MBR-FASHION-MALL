@@ -1,6 +1,7 @@
 const asyncHandler = require('express-async-handler');
 const crypto = require('crypto');
 const prisma = require('../utils/prisma');
+const { getCouponDiscount } = require('./couponController');
 
 const verifyRazorpaySignature = ({ razorpayOrderId, razorpayPaymentId, signature }) => {
   if (!razorpayOrderId || !razorpayPaymentId || !signature) return false;
@@ -17,6 +18,8 @@ exports.createOrder = asyncHandler(async (req, res) => {
     orderItems,
     totalAmount,
     totalPrice,
+    subtotalAmount,
+    couponCode,
     razorpayOrderId,
     razorpayPaymentId,
     paymentSignature,
@@ -25,6 +28,10 @@ exports.createOrder = asyncHandler(async (req, res) => {
   } = req.body;
 
   const amountValue = Number(totalAmount ?? totalPrice ?? 0);
+  const subtotalValue = Number(subtotalAmount ?? totalAmount ?? totalPrice ?? 0);
+  let discountAmount = 0;
+  let appliedCouponCode = null;
+  let appliedCouponId = null;
 
   if (!orderItems || orderItems.length === 0) {
     res.status(400);
@@ -36,36 +43,84 @@ exports.createOrder = asyncHandler(async (req, res) => {
     throw new Error('Total amount must be greater than zero');
   }
 
-  const createdOrder = await prisma.order.create({
-    data: {
-      userId: req.user.id,
-      totalAmount: amountValue,
-      status,
-      paymentStatus,
-      razorpayOrderId,
-      razorpayPaymentId,
-      paymentSignature,
-      items: {
-        create: orderItems.map((item) => ({
-          productId: item.product || item.productId,
-          quantity: Number(item.quantity),
-          price: Number(item.price),
-        })),
-      },
-    },
-    include: {
-      items: { include: { product: true } },
-      user: { select: { id: true, name: true, email: true } },
-    },
-  });
-
-  for (const item of orderItems) {
-    if (item.product || item.productId) {
-      await prisma.product.update({
-        where: { id: item.product || item.productId },
-        data: { stock: { decrement: Number(item.quantity) } },
-      });
+  if (couponCode) {
+    try {
+      const couponResult = await getCouponDiscount(couponCode, subtotalValue, req.user.id);
+      discountAmount = couponResult.discountAmount;
+      appliedCouponCode = couponResult.coupon.code;
+      appliedCouponId = couponResult.coupon.id;
+    } catch (error) {
+      res.status(400);
+      throw new Error(error.message);
     }
+  }
+
+  const finalAmount = Math.max(subtotalValue - discountAmount, 0);
+
+  let createdOrder;
+  try {
+    createdOrder = await prisma.$transaction(async (tx) => {
+      const order = await tx.order.create({
+        data: {
+          userId: req.user.id,
+          totalAmount: finalAmount,
+          subtotalAmount: subtotalValue,
+          discountAmount,
+          couponCode: appliedCouponCode,
+          status,
+          paymentStatus,
+          razorpayOrderId,
+          razorpayPaymentId,
+          paymentSignature,
+          items: {
+            create: orderItems.map((item) => ({
+              productId: item.product || item.productId || null,
+              comboProductId: item.comboProduct || item.comboProductId || null,
+              quantity: Number(item.quantity),
+              price: Number(item.price),
+              size: item.size || null,
+            })),
+          },
+        },
+        include: {
+          items: { include: { product: true, comboProduct: true } },
+          user: { select: { id: true, name: true, email: true } },
+        },
+      });
+
+      if (appliedCouponId) {
+        await tx.couponRedemption.create({
+          data: {
+            couponId: appliedCouponId,
+            couponCode: appliedCouponCode,
+            userId: req.user.id,
+            orderId: order.id,
+          },
+        });
+      }
+
+      for (const item of orderItems) {
+        if (item.product || item.productId) {
+          await tx.product.update({
+            where: { id: item.product || item.productId },
+            data: { stock: { decrement: Number(item.quantity) } },
+          });
+        } else if (item.comboProduct || item.comboProductId) {
+          await tx.comboProduct.update({
+            where: { id: item.comboProduct || item.comboProductId },
+            data: { stock: { decrement: Number(item.quantity) } },
+          });
+        }
+      }
+
+      return order;
+    });
+  } catch (error) {
+    if (error.code === 'P2002') {
+      res.status(400);
+      throw new Error('You have already used this coupon');
+    }
+    throw error;
   }
 
   res.status(201).json(createdOrder);
@@ -75,7 +130,7 @@ exports.getOrderById = asyncHandler(async (req, res) => {
   const order = await prisma.order.findUnique({
     where: { id: req.params.id },
     include: {
-      items: { include: { product: true } },
+      items: { include: { product: true, comboProduct: true } },
       user: { select: { id: true, name: true, email: true } },
     },
   });
@@ -125,7 +180,7 @@ exports.updateOrderPayment = asyncHandler(async (req, res) => {
       status: status || order.status,
     },
     include: {
-      items: { include: { product: true } },
+      items: { include: { product: true, comboProduct: true } },
       user: { select: { id: true, name: true, email: true } },
     },
   });
@@ -136,7 +191,7 @@ exports.updateOrderPayment = asyncHandler(async (req, res) => {
 exports.getUserOrders = asyncHandler(async (req, res) => {
   const orders = await prisma.order.findMany({
     where: { userId: req.user.id },
-    include: { items: { include: { product: true } } },
+    include: { items: { include: { product: true, comboProduct: true } } },
     orderBy: { createdAt: 'desc' },
   });
   res.json(orders);
@@ -145,7 +200,7 @@ exports.getUserOrders = asyncHandler(async (req, res) => {
 exports.getOrders = asyncHandler(async (req, res) => {
   const orders = await prisma.order.findMany({
     include: {
-      items: { include: { product: true } },
+      items: { include: { product: true, comboProduct: true } },
       user: { select: { id: true, name: true, email: true } },
     },
     orderBy: { createdAt: 'desc' },

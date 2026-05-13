@@ -43,6 +43,7 @@ const ProductDetailPage = () => {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [paymentLoading, setPaymentLoading] = useState(false);
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
 
@@ -70,8 +71,35 @@ const ProductDetailPage = () => {
   }
 
   const imageUrl = getProductImageUrl(product.images?.[selectedImageIndex] || product.images);
+  const productImages = Array.isArray(product.images) && product.images.length > 0 ? product.images : [product.images];
+  const hasMultipleImages = productImages.length > 1;
   const inStock = Number(product.stock) > 0;
   const totalAmount = Math.round(getEffectivePrice(product) * quantity * 100);
+
+  const showPreviousImage = () => {
+    if (!hasMultipleImages) return;
+    setSelectedImageIndex((current) => (current === 0 ? productImages.length - 1 : current - 1));
+  };
+
+  const showNextImage = () => {
+    if (!hasMultipleImages) return;
+    setSelectedImageIndex((current) => (current === productImages.length - 1 ? 0 : current + 1));
+  };
+
+  const handleTouchEnd = (clientX: number) => {
+    if (touchStartX === null) return;
+    const distance = touchStartX - clientX;
+
+    if (Math.abs(distance) > 40) {
+      if (distance > 0) {
+        showNextImage();
+      } else {
+        showPreviousImage();
+      }
+    }
+
+    setTouchStartX(null);
+  };
 
   const requireLogin = () => {
     navigate('/login', { state: { from: { pathname: `/product/${product.id}` } } });
@@ -144,38 +172,73 @@ const ProductDetailPage = () => {
   };
 
   return (
-    <div className="mx-auto max-w-6xl px-4 sm:px-6 py-8 sm:py-12">
-      <div className="grid gap-6 sm:gap-8 md:gap-10 rounded-2xl sm:rounded-3xl border border-slate-200 bg-white p-4 sm:p-6 md:p-8 shadow-sm lg:grid-cols-[1.05fr_0.95fr]">
-        <div className="order-1 lg:order-none">
-          <div className="overflow-hidden rounded-2xl sm:rounded-3xl bg-slate-100">
-            <img src={imageUrl} alt={product.name} className="h-full min-h-[280px] sm:min-h-[360px] w-full object-cover" />
+    <div className="mx-auto w-full max-w-6xl overflow-hidden px-3 py-6 sm:px-6 sm:py-12">
+      <div className="grid min-w-0 gap-6 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:gap-8 sm:rounded-3xl sm:p-6 md:gap-10 md:p-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
+        <div className="order-1 min-w-0 lg:order-none">
+          <div
+            className="relative aspect-[4/5] w-full max-w-full overflow-hidden rounded-2xl bg-slate-100 sm:aspect-square sm:rounded-3xl lg:aspect-[4/5]"
+            onTouchStart={(event) => setTouchStartX(event.touches[0].clientX)}
+            onTouchEnd={(event) => handleTouchEnd(event.changedTouches[0].clientX)}
+          >
+            <img src={imageUrl} alt={product.name} className="h-full w-full select-none object-cover" draggable={false} />
+            {hasMultipleImages && (
+              <>
+                <button
+                  type="button"
+                  onClick={showPreviousImage}
+                  aria-label="Previous product image"
+                  className="absolute left-3 top-1/2 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/70 bg-white/90 text-slate-900 shadow-lg transition hover:bg-white sm:flex"
+                >
+                  <span aria-hidden="true" className="text-2xl leading-none">‹</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={showNextImage}
+                  aria-label="Next product image"
+                  className="absolute right-3 top-1/2 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/70 bg-white/90 text-slate-900 shadow-lg transition hover:bg-white sm:flex"
+                >
+                  <span aria-hidden="true" className="text-2xl leading-none">›</span>
+                </button>
+                <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5 rounded-full bg-black/35 px-2.5 py-1.5 backdrop-blur">
+                  {productImages.map((img: string, index: number) => (
+                    <button
+                      key={`${img}-dot`}
+                      type="button"
+                      onClick={() => setSelectedImageIndex(index)}
+                      aria-label={`Show image ${index + 1}`}
+                      className={`h-2 rounded-full border-0 p-0 shadow-none transition-all ${selectedImageIndex === index ? 'w-6 bg-white' : 'w-2 bg-white/55'}`}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
           </div>
-          {product.images?.length > 1 && (
-            <div className="mt-3 grid grid-cols-4 gap-2">
-              {product.images.map((img: string, index: number) => (
+          {hasMultipleImages && (
+            <div className="mt-3 flex max-w-full gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {productImages.map((img: string, index: number) => (
                 <button
                   key={img}
                   type="button"
                   onClick={() => setSelectedImageIndex(index)}
-                  className={`overflow-hidden rounded-2xl border transition ${selectedImageIndex === index ? 'border-orange-500 ring-1 ring-orange-200' : 'border-slate-200'}`}
+                  className={`h-20 w-20 shrink-0 overflow-hidden rounded-2xl border transition sm:h-24 sm:w-24 ${selectedImageIndex === index ? 'border-maroon ring-2 ring-maroon/20' : 'border-slate-200 opacity-75 hover:opacity-100'}`}
                 >
-                  <img src={getProductImageUrl(img)} alt={`${product.name} ${index + 1}`} className="h-20 w-full object-cover" />
+                  <img src={getProductImageUrl(img)} alt={`${product.name} ${index + 1}`} className="h-full w-full object-cover" />
                 </button>
               ))}
             </div>
           )}
         </div>
 
-        <section className="flex flex-col justify-center">
-          <p className="text-xs sm:text-sm uppercase tracking-[0.3em] text-orange-500">{product.category}</p>
-          <h1 className="mt-2 sm:mt-3 text-2xl sm:text-3xl md:text-4xl font-semibold text-slate-900">{product.name}</h1>
+        <section className="order-2 min-w-0 overflow-hidden break-words flex flex-col justify-center lg:order-none">
+          <p className="text-xs uppercase tracking-[0.22em] text-maroon sm:text-sm sm:tracking-[0.3em]">{product.category}</p>
+          <h1 className="mt-2 text-2xl font-semibold leading-tight text-slate-900 sm:mt-3 sm:text-3xl md:text-4xl">{product.name}</h1>
           <div className="mt-3 sm:mt-4">
             <ProductPrice product={product} size="lg" />
           </div>
-          <p className="mt-4 sm:mt-6 text-sm sm:text-base leading-6 sm:leading-8 text-slate-700">{product.description || 'No description available.'}</p>
+          <p className="mt-4 max-w-full whitespace-normal text-sm leading-6 text-slate-700 sm:mt-6 sm:text-base sm:leading-8">{product.description || 'No description available.'}</p>
 
-          <div className="mt-4 sm:mt-6 grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-2 md:grid-cols-2">
-            <div>
+          <div className="mt-4 grid min-w-0 grid-cols-1 gap-3 min-[360px]:grid-cols-2 sm:mt-6 sm:gap-4">
+            <div className="min-w-0">
               <label className="text-xs sm:text-sm font-semibold text-slate-700">Available sizes</label>
               <select value={size} onChange={(event) => setSize(event.target.value)} className="mt-2 w-full p-2 sm:p-3 border border-slate-300 rounded-lg text-sm">
                 {(product.sizes || []).map((option: string) => (
@@ -183,7 +246,7 @@ const ProductDetailPage = () => {
                 ))}
               </select>
             </div>
-            <div>
+            <div className="min-w-0">
               <label className="text-xs sm:text-sm font-semibold text-slate-700">Quantity</label>
               <input
                 type="number"
@@ -207,7 +270,7 @@ const ProductDetailPage = () => {
             <button
               onClick={handleAddToCart}
               disabled={!inStock}
-              className="rounded-full bg-orange-600 px-4 sm:px-5 py-3 sm:py-4 text-xs sm:text-sm font-semibold text-white shadow hover:bg-orange-700 disabled:cursor-not-allowed disabled:opacity-60 transition w-full"
+              className="rounded-full bg-maroon px-4 sm:px-5 py-3 sm:py-4 text-xs sm:text-sm font-semibold text-white shadow hover:bg-maroon/90 disabled:cursor-not-allowed disabled:opacity-60 transition w-full"
             >
               Add to Cart
             </button>
@@ -232,7 +295,7 @@ const ProductDetailPage = () => {
       {recommendedProducts.length > 0 && (
         <section className="mt-12 sm:mt-16">
           <div className="mb-8">
-            <p className="text-sm uppercase tracking-[0.3em] text-orange-500">Explore more</p>
+            <p className="text-sm uppercase tracking-[0.3em] text-maroon">Explore more</p>
             <h2 className="mt-2 text-2xl sm:text-3xl md:text-4xl font-semibold text-slate-900">
               Recommended from {product?.category}
             </h2>

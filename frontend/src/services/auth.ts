@@ -4,6 +4,12 @@ type UserData = { name: string; email: string; password: string };
 
 type LoginData = { email: string; password: string };
 
+type ChangePasswordData = { currentPassword: string; newPassword: string };
+
+type ForgotPasswordData = { email: string };
+
+type ResetPasswordData = { email: string; otp: string; newPassword: string };
+
 export const signup = async (data: UserData) => {
   const response = await api.post('/auth/signup', data);
   persistAuth(response.data);
@@ -13,6 +19,21 @@ export const signup = async (data: UserData) => {
 export const login = async (data: LoginData) => {
   const response = await api.post('/auth/login', data);
   persistAuth(response.data);
+  return response.data;
+};
+
+export const changePassword = async (data: ChangePasswordData) => {
+  const response = await api.put('/auth/password', data);
+  return response.data;
+};
+
+export const requestPasswordOtp = async (data: ForgotPasswordData) => {
+  const response = await api.post('/auth/forgot-password', data);
+  return response.data;
+};
+
+export const resetPasswordWithOtp = async (data: ResetPasswordData) => {
+  const response = await api.post('/auth/reset-password', data);
   return response.data;
 };
 

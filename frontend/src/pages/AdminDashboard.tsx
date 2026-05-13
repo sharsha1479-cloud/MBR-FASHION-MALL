@@ -1,27 +1,54 @@
-import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { fetchAdminOrders, fetchAdminUsers } from '../services/admin';
 import { createProduct, deleteProduct, fetchProducts, getProductImageUrl, updateProduct } from '../services/product';
 import { fetchCategories, createCategory, updateCategory, deleteCategory } from '../services/category';
 import { createBanner, deleteBanner, fetchBanners, getBannerImageUrl, updateBanner } from '../services/banner';
+import { createCombo, deleteCombo, fetchCombos, getComboImageUrl, updateCombo } from '../services/combo';
+import { createCoupon, deleteCoupon, fetchCoupons, updateCoupon } from '../services/coupon';
+import { createStoreInventoryRecord, deleteStoreInventoryRecord, fetchStoreInventory, updateStoreInventoryRecord } from '../services/storeInventory';
 import { categories as defaultCategories } from '../constants/categories';
 
-type AdminSection = 'users' | 'orders' | 'categories' | 'products' | 'trending' | 'banners';
+type AdminSection = 'dashboard' | 'notifications' | 'users' | 'orders' | 'storeInventory' | 'categories' | 'products' | 'trending' | 'combos' | 'banners' | 'coupons';
+
+type AdminNotification = {
+  id: string;
+  title: string;
+  message: string;
+  orderId?: string;
+  createdAt: string;
+  read: boolean;
+};
 
 const sections: Array<{ group: string; items: Array<{ key: AdminSection; label: string }> }> = [
-  { group: 'Management', items: [{ key: 'orders', label: 'Orders' }, { key: 'users', label: 'Users' }] },
-  { group: 'Catalog', items: [{ key: 'categories', label: 'Categories' }, { key: 'products', label: 'Products' }, { key: 'trending', label: 'Trending' }, { key: 'banners', label: 'Banners' }] },
+  { group: 'Overview', items: [{ key: 'dashboard', label: 'Dashboard' }, { key: 'notifications', label: 'Notifications' }] },
+  { group: 'Management', items: [{ key: 'orders', label: 'Orders' }, { key: 'storeInventory', label: 'Store Inventory' }, { key: 'users', label: 'Users' }] },
+  { group: 'Catalog', items: [{ key: 'categories', label: 'Categories' }, { key: 'products', label: 'Products' }, { key: 'trending', label: 'Trending' }, { key: 'combos', label: 'Combos' }, { key: 'banners', label: 'Banners' }, { key: 'coupons', label: 'Coupons' }] },
 ];
 
 const AdminDashboard = () => {
-  const [activeSection, setActiveSection] = useState<AdminSection>('orders');
+  const [activeSection, setActiveSection] = useState<AdminSection>('dashboard');
   const [products, setProducts] = useState<any[]>([]);
+  const [combos, setCombos] = useState<any[]>([]);
   const [banners, setBanners] = useState<any[]>([]);
+  const [coupons, setCoupons] = useState<any[]>([]);
+  const [stores, setStores] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [newOrderNotice, setNewOrderNotice] = useState('');
+  const [notifications, setNotifications] = useState<AdminNotification[]>(() => {
+    try {
+      const stored = localStorage.getItem('adminNotifications');
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
+  const knownOrderIdsRef = useRef<Set<string>>(new Set());
+  const hasLoadedOrdersRef = useRef(false);
   const [form, setForm] = useState({
     name: '',
     description: '',
@@ -49,22 +76,64 @@ const AdminDashboard = () => {
     isActive: true,
   });
   const [bannerImage, setBannerImage] = useState<File | null>(null);
+  const [comboMessage, setComboMessage] = useState('');
+  const [editingCombo, setEditingCombo] = useState<any | null>(null);
+  const [comboForm, setComboForm] = useState({
+    name: '',
+    description: '',
+    mrp: '',
+    offerPrice: '',
+    stock: '',
+    sizes: 'S,M,L',
+    isActive: true,
+  });
+  const [comboImage, setComboImage] = useState<File | null>(null);
+  const [couponMessage, setCouponMessage] = useState('');
+  const [editingCoupon, setEditingCoupon] = useState<any | null>(null);
+  const [couponForm, setCouponForm] = useState({
+    code: '',
+    discountType: 'percentage',
+    discountValue: '',
+    minOrderAmount: '',
+    isActive: true,
+  });
+  const [activeStoreId, setActiveStoreId] = useState('');
+  const [inventoryMessage, setInventoryMessage] = useState('');
+  const [editingInventory, setEditingInventory] = useState<any | null>(null);
+  const [inventoryForm, setInventoryForm] = useState({
+    entryType: 'online',
+    productId: '',
+    customName: '',
+    customCategory: '',
+    customPrice: '',
+    size: 'Default',
+    availableStock: '',
+    soldCount: '0',
+  });
   const [viewingProductImage, setViewingProductImage] = useState<{ imageUrl: string; productName: string } | null>(null);
   const navigate = useNavigate();
 
   const loadAdminData = async () => {
     setLoading(true);
     try {
-      const [productData, userData, orderData, bannerData] = await Promise.all([
+      const [productData, userData, orderData, bannerData, couponData, storeData] = await Promise.all([
         fetchProducts(),
         fetchAdminUsers(),
         fetchAdminOrders(),
         fetchBanners(true),
+        fetchCoupons(),
+        fetchStoreInventory(),
       ]);
       setProducts(productData);
       setUsers(userData);
       setOrders(orderData);
+      knownOrderIdsRef.current = new Set((Array.isArray(orderData) ? orderData : []).map((order: any) => order.id));
+      hasLoadedOrdersRef.current = true;
       setBanners(Array.isArray(bannerData) ? bannerData : []);
+      setCoupons(Array.isArray(couponData) ? couponData : []);
+      const normalizedStores = Array.isArray(storeData) ? storeData : [];
+      setStores(normalizedStores);
+      setActiveStoreId((current) => current || normalizedStores[0]?.id || '');
 
       try {
         const categoryData = await fetchCategories();
@@ -91,11 +160,94 @@ const AdminDashboard = () => {
     } finally {
       setLoading(false);
     }
+
+    try {
+      const comboData = await fetchCombos(true);
+      setCombos(Array.isArray(comboData) ? comboData : []);
+    } catch (error) {
+      console.error('Failed to load combo products', error);
+      setCombos([]);
+      setComboMessage('Combo products need the backend migration before they can be managed.');
+    }
   };
 
   useEffect(() => {
     loadAdminData();
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem('adminNotifications', JSON.stringify(notifications.slice(0, 50)));
+  }, [notifications]);
+
+  useEffect(() => {
+    const notifyNewOrder = (order: any) => {
+      const total = Number(order.totalAmount || 0).toFixed(0);
+      const text = `New order received - Rs. ${total}`;
+      setNewOrderNotice(text);
+      setNotifications((current) => {
+        if (current.some((notification) => notification.orderId === order.id)) {
+          return current;
+        }
+
+        return [
+          {
+            id: `order-${order.id}`,
+            title: 'New order received',
+            message: `Order ${order.id} was placed for Rs. ${total}.`,
+            orderId: order.id,
+            createdAt: new Date().toISOString(),
+            read: false,
+          },
+          ...current,
+        ].slice(0, 50);
+      });
+
+      if ('Notification' in window) {
+        if (Notification.permission === 'granted') {
+          new Notification('New order received', { body: text });
+        } else if (Notification.permission === 'default') {
+          Notification.requestPermission().then((permission) => {
+            if (permission === 'granted') {
+              new Notification('New order received', { body: text });
+            }
+          });
+        }
+      }
+    };
+
+    const checkForNewOrders = async () => {
+      try {
+        const latestOrders = await fetchAdminOrders();
+        if (!Array.isArray(latestOrders)) return;
+
+        if (!hasLoadedOrdersRef.current) {
+          knownOrderIdsRef.current = new Set(latestOrders.map((order) => order.id));
+          hasLoadedOrdersRef.current = true;
+          setOrders(latestOrders);
+          return;
+        }
+
+        const newOrders = latestOrders.filter((order) => !knownOrderIdsRef.current.has(order.id));
+        if (newOrders.length > 0) {
+          notifyNewOrder(newOrders[0]);
+        }
+
+        knownOrderIdsRef.current = new Set(latestOrders.map((order) => order.id));
+        setOrders(latestOrders);
+      } catch (error) {
+        console.error('Failed to check new orders', error);
+      }
+    };
+
+    const interval = window.setInterval(checkForNewOrders, 20000);
+    return () => window.clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if (!newOrderNotice) return;
+    const timeout = window.setTimeout(() => setNewOrderNotice(''), 7000);
+    return () => window.clearTimeout(timeout);
+  }, [newOrderNotice]);
 
   useEffect(() => {
     return () => {
@@ -158,10 +310,131 @@ const AdminDashboard = () => {
     [banners, search]
   );
 
+  const filteredCombos = useMemo(
+    () => combos.filter((combo) =>
+      [combo.name, combo.description, combo.isActive ? 'active' : 'hidden'].join(' ').toLowerCase().includes(search.toLowerCase())
+    ),
+    [combos, search]
+  );
+
+  const filteredCoupons = useMemo(
+    () => coupons.filter((coupon) =>
+      [coupon.code, coupon.discountType, coupon.isActive ? 'active' : 'hidden'].join(' ').toLowerCase().includes(search.toLowerCase())
+    ),
+    [coupons, search]
+  );
+
+  const activeStore = useMemo(
+    () => stores.find((store) => store.id === activeStoreId) || stores[0],
+    [activeStoreId, stores]
+  );
+
+  const activeStoreInventory = useMemo(
+    () => (activeStore?.inventory || []).filter((record: any) =>
+      [
+        record.product?.name,
+        record.product?.category,
+        record.customName,
+        record.customCategory,
+        record.size,
+        record.availableStock,
+        record.soldCount,
+        record.remainingStock,
+      ].join(' ').toLowerCase().includes(search.toLowerCase())
+    ),
+    [activeStore, search]
+  );
+
+  const dashboardStats = useMemo(() => {
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now);
+    thirtyDaysAgo.setDate(now.getDate() - 30);
+
+    const recentOrders = orders.filter((order) => new Date(order.createdAt) >= thirtyDaysAgo);
+    const paidRecentOrders = recentOrders.filter((order) => order.paymentStatus === 'paid');
+    const revenueLast30Days = paidRecentOrders.reduce((sum, order) => sum + Number(order.totalAmount || 0), 0);
+
+    return {
+      revenueLast30Days,
+      newOrdersLast30Days: recentOrders.length,
+      totalOrders: orders.length,
+      totalUsers: users.length,
+      recentOrders: orders.slice(0, 5),
+    };
+  }, [orders, users]);
+
   const handleDelete = async (id: string) => {
     if (!window.confirm('Delete this product?')) return;
     await deleteProduct(id);
     await loadAdminData();
+  };
+
+  const resetInventoryForm = () => {
+    setEditingInventory(null);
+    setInventoryForm({ entryType: 'online', productId: '', customName: '', customCategory: '', customPrice: '', size: 'Default', availableStock: '', soldCount: '0' });
+  };
+
+  const handleSubmitInventory = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setInventoryMessage('');
+
+    if (!activeStore?.id) {
+      setInventoryMessage('Choose a store first.');
+      return;
+    }
+
+    try {
+      if (editingInventory) {
+        await updateStoreInventoryRecord(editingInventory.id, {
+          availableStock: inventoryForm.availableStock,
+          soldCount: inventoryForm.soldCount,
+        });
+        setInventoryMessage('Inventory record updated.');
+      } else {
+        await createStoreInventoryRecord({
+          storeId: activeStore.id,
+          productId: inventoryForm.entryType === 'online' ? inventoryForm.productId : undefined,
+          customName: inventoryForm.entryType === 'offline' ? inventoryForm.customName : undefined,
+          customCategory: inventoryForm.entryType === 'offline' ? inventoryForm.customCategory : undefined,
+          customPrice: inventoryForm.entryType === 'offline' ? inventoryForm.customPrice : undefined,
+          size: inventoryForm.size,
+          availableStock: inventoryForm.availableStock,
+          soldCount: inventoryForm.soldCount,
+        });
+        setInventoryMessage('Product added to store inventory.');
+      }
+      resetInventoryForm();
+      await loadAdminData();
+    } catch (error: any) {
+      setInventoryMessage(error.response?.data?.message || 'Could not save inventory record.');
+    }
+  };
+
+  const handleEditInventory = (record: any) => {
+    setInventoryMessage('');
+    setEditingInventory(record);
+    setInventoryForm({
+      entryType: record.productId ? 'online' : 'offline',
+      productId: record.productId,
+      customName: record.customName || '',
+      customCategory: record.customCategory || '',
+      customPrice: record.customPrice === null || record.customPrice === undefined ? '' : String(record.customPrice),
+      size: record.size || 'Default',
+      availableStock: String(record.availableStock ?? 0),
+      soldCount: String(record.soldCount ?? 0),
+    });
+  };
+
+  const handleDeleteInventory = async (id: string) => {
+    if (!window.confirm('Delete this inventory record?')) return;
+    try {
+      await deleteStoreInventoryRecord(id);
+      setInventoryMessage('Inventory record deleted.');
+      if (editingInventory?.id === id) resetInventoryForm();
+      await loadAdminData();
+    } catch (error: any) {
+      setInventoryMessage(error.response?.data?.message || 'Could not delete inventory record.');
+    }
   };
 
   const handleAddCategory = () => {
@@ -357,31 +630,209 @@ const AdminDashboard = () => {
     }
   };
 
+  const resetComboForm = () => {
+    setEditingCombo(null);
+    setComboForm({
+      name: '',
+      description: '',
+      mrp: '',
+      offerPrice: '',
+      stock: '',
+      sizes: 'S,M,L',
+      isActive: true,
+    });
+    setComboImage(null);
+  };
+
+  const handleEditCombo = (combo: any) => {
+    setComboMessage('');
+    setEditingCombo(combo);
+    setComboForm({
+      name: combo.name || '',
+      description: combo.description || '',
+      mrp: combo.mrp !== null && combo.mrp !== undefined ? String(combo.mrp) : '',
+      offerPrice: combo.offerPrice !== null && combo.offerPrice !== undefined ? String(combo.offerPrice) : '',
+      stock: combo.stock !== null && combo.stock !== undefined ? String(combo.stock) : '',
+      sizes: Array.isArray(combo.sizes) && combo.sizes.length > 0 ? combo.sizes.join(',') : 'S,M,L',
+      isActive: Boolean(combo.isActive),
+    });
+    setComboImage(null);
+  };
+
+  const handleSubmitCombo = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setComboMessage('');
+
+    if (!editingCombo && !comboImage) {
+      setComboMessage('Combo image is required.');
+      return;
+    }
+
+    const formData = new FormData();
+    Object.entries(comboForm).forEach(([key, value]) => formData.append(key, String(value)));
+    if (comboImage) {
+      formData.append('image', comboImage);
+    }
+
+    try {
+      if (editingCombo) {
+        await updateCombo(editingCombo.id, formData);
+        setComboMessage('Combo product updated successfully.');
+      } else {
+        await createCombo(formData);
+        setComboMessage('Combo product added successfully.');
+      }
+      resetComboForm();
+      await loadAdminData();
+    } catch (error: any) {
+      setComboMessage(error.response?.data?.message || 'Could not save combo product.');
+    }
+  };
+
+  const handleDeleteCombo = async (id: string) => {
+    if (!window.confirm('Delete this combo product?')) return;
+
+    try {
+      await deleteCombo(id);
+      setComboMessage('Combo product deleted successfully.');
+      if (editingCombo?.id === id) resetComboForm();
+      await loadAdminData();
+    } catch (error: any) {
+      setComboMessage(error.response?.data?.message || 'Could not delete combo product.');
+    }
+  };
+
+  const resetCouponForm = () => {
+    setEditingCoupon(null);
+    setCouponForm({
+      code: '',
+      discountType: 'percentage',
+      discountValue: '',
+      minOrderAmount: '',
+      isActive: true,
+    });
+    setCouponMessage('');
+  };
+
+  const handleEditCoupon = (coupon: any) => {
+    setEditingCoupon(coupon);
+    setCouponForm({
+      code: coupon.code,
+      discountType: coupon.discountType,
+      discountValue: String(coupon.discountValue ?? ''),
+      minOrderAmount: coupon.minOrderAmount == null ? '' : String(coupon.minOrderAmount),
+      isActive: Boolean(coupon.isActive),
+    });
+    setCouponMessage('');
+  };
+
+  const handleSubmitCoupon = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setCouponMessage('');
+
+    const payload = {
+      code: couponForm.code,
+      discountType: couponForm.discountType,
+      discountValue: Number(couponForm.discountValue),
+      minOrderAmount: couponForm.minOrderAmount,
+      isActive: couponForm.isActive,
+    };
+
+    try {
+      if (editingCoupon) {
+        await updateCoupon(editingCoupon.id, payload);
+        setCouponMessage('Coupon updated successfully.');
+      } else {
+        await createCoupon(payload);
+        setCouponMessage('Coupon created successfully.');
+      }
+      resetCouponForm();
+      await loadAdminData();
+    } catch (error: any) {
+      setCouponMessage(error.response?.data?.message || 'Could not save coupon.');
+    }
+  };
+
+  const handleDeleteCoupon = async (id: string) => {
+    if (!window.confirm('Delete this coupon?')) return;
+
+    try {
+      await deleteCoupon(id);
+      setCouponMessage('Coupon deleted successfully.');
+      if (editingCoupon?.id === id) resetCouponForm();
+      await loadAdminData();
+    } catch (error: any) {
+      setCouponMessage(error.response?.data?.message || 'Could not delete coupon.');
+    }
+  };
+
+  const markNotificationsRead = () => {
+    setNotifications((current) => current.map((notification) => ({ ...notification, read: true })));
+  };
+
+  const clearNotifications = () => {
+    setNotifications([]);
+  };
+
   const stats = {
+    dashboard: '',
+    notifications: notifications.filter((notification) => !notification.read).length,
     orders: orders.length,
+    storeInventory: stores.reduce((sum, store) => sum + (store.inventory?.length || 0), 0),
     users: users.length,
     categories: categories.length,
     products: products.length,
     trending: products.filter((product) => product.isTrending).length,
+    combos: combos.length,
     banners: banners.length,
+    coupons: coupons.length,
   };
 
   const sectionTitle = {
+    dashboard: 'Business performance overview',
+    notifications: 'Review admin notifications',
     users: 'Manage users and permissions',
     orders: 'Review recent orders',
+    storeInventory: 'Manage inventory across store locations',
     categories: 'Browse categories',
     products: 'Manage product catalog',
     trending: 'Choose trending products',
+    combos: 'Manage combo products',
     banners: 'Manage homepage banners',
+    coupons: 'Manage checkout coupons',
   }[activeSection];
 
   return (
     <div className="min-h-screen w-full bg-slate-100 text-slate-900">
+      {newOrderNotice && (
+        <div className="fixed right-4 top-4 z-[60] w-[calc(100vw-2rem)] max-w-sm rounded-3xl border border-green-200 bg-white p-4 shadow-2xl shadow-slate-950/20">
+          <div className="flex items-start gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-green-100 text-green-700">
+              <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" />
+                <path d="M3 6h18" />
+                <path d="M16 10a4 4 0 0 1-8 0" />
+              </svg>
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-black text-slate-950">New order received</p>
+              <p className="mt-1 text-xs font-semibold text-slate-500">{newOrderNotice}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setNewOrderNotice('')}
+              className="rounded-full border-0 bg-slate-100 px-2 py-1 text-xs font-bold text-slate-600 shadow-none hover:bg-slate-200"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
       <div className="w-full px-0 py-3 sm:py-4">
         <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
           <aside className="rounded-3xl bg-slate-950 p-5 text-slate-100 shadow-lg ring-1 ring-slate-200/10">
             <div className="mb-8">
-              <p className="text-sm uppercase tracking-[0.32em] text-orange-200">Men&apos;s Fashion</p>
+              <p className="text-sm uppercase tracking-[0.32em] text-white/80">Men&apos;s Fashion</p>
               <h1 className="mt-3 text-3xl font-semibold text-white">Admin Panel</h1>
               <p className="mt-3 text-sm text-slate-300">Powerful insights for orders, inventory, users, and catalog.</p>
             </div>
@@ -398,7 +849,7 @@ const AdminDashboard = () => {
                         onClick={() => setActiveSection(item.key)}
                         className={`flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left text-sm font-medium transition ${
                           activeSection === item.key
-                            ? 'bg-orange-500 text-slate-950 shadow-inner'
+                            ? 'bg-maroon text-white shadow-inner'
                             : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
                         }`}
                       >
@@ -416,10 +867,10 @@ const AdminDashboard = () => {
 
           <main className="space-y-5 min-w-0">
             {activeSection !== 'products' && (
-              <section className="rounded-3xl bg-gradient-to-r from-orange-600 via-orange-500 to-rose-500 p-5 text-white shadow-lg">
+              <section className="rounded-3xl bg-maroon p-5 text-white shadow-lg shadow-maroon/20">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    <p className="text-sm uppercase tracking-[0.28em] text-orange-100/90">Men&apos;s Fashion Admin Panel</p>
+                    <p className="text-sm uppercase tracking-[0.28em] text-white/80">Men&apos;s Fashion Admin Panel</p>
                     <h2 className="mt-2 text-3xl font-semibold">Stylish operations with fast access</h2>
                   </div>
                   <div className="inline-flex items-center gap-3 rounded-3xl bg-white/10 px-4 py-3 text-sm font-semibold text-white shadow">
@@ -440,12 +891,12 @@ const AdminDashboard = () => {
                 )}
 
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                  {activeSection !== 'products' && (
+                  {activeSection !== 'products' && activeSection !== 'dashboard' && activeSection !== 'notifications' && (
                     <input
                       value={search}
                       onChange={(event) => setSearch(event.target.value)}
                       placeholder="Search in this section"
-                      className="w-full rounded-3xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-200 sm:w-72"
+                      className="w-full rounded-3xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-maroon focus:outline-none focus:ring-2 focus:ring-maroon/20 sm:w-72"
                     />
                   )}
                   {activeSection === 'products' && (
@@ -472,6 +923,390 @@ const AdminDashboard = () => {
                 <p className="mb-5 rounded-2xl bg-slate-100 px-4 py-3 text-sm font-semibold text-slate-700">
                   {message}
                 </p>
+              )}
+
+              {activeSection === 'dashboard' && (
+                <div className="space-y-5">
+                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                    {[
+                      {
+                        label: 'Revenue last 30 days',
+                        value: `Rs. ${dashboardStats.revenueLast30Days.toFixed(0)}`,
+                        detail: 'Paid orders only',
+                        tone: 'bg-slate-950 text-white',
+                      },
+                      {
+                        label: 'New orders',
+                        value: dashboardStats.newOrdersLast30Days,
+                        detail: 'Placed in last 30 days',
+                        tone: 'bg-maroon/10 text-maroon',
+                      },
+                      {
+                        label: 'Total orders',
+                        value: dashboardStats.totalOrders,
+                        detail: 'All-time platform orders',
+                        tone: 'bg-blue-50 text-blue-700',
+                      },
+                      {
+                        label: 'Total users',
+                        value: dashboardStats.totalUsers,
+                        detail: 'Registered accounts',
+                        tone: 'bg-emerald-50 text-emerald-700',
+                      },
+                    ].map((card) => (
+                      <div key={card.label} className={`rounded-3xl p-5 shadow-sm ring-1 ring-slate-200/70 ${card.tone}`}>
+                        <p className="text-xs font-bold uppercase tracking-[0.2em] opacity-70">{card.label}</p>
+                        <p className="mt-4 text-3xl font-black">{card.value}</p>
+                        <p className="mt-2 text-sm font-semibold opacity-70">{card.detail}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="grid gap-5 xl:grid-cols-[1fr_360px]">
+                    <section className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
+                      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                          <p className="text-xs font-bold uppercase tracking-[0.24em] text-slate-500">Latest activity</p>
+                          <h4 className="mt-2 text-xl font-semibold text-slate-950">Recent orders</h4>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setActiveSection('orders')}
+                          className="rounded-full bg-slate-950 px-4 py-2 text-xs font-semibold text-white hover:bg-slate-800"
+                        >
+                          View all orders
+                        </button>
+                      </div>
+
+                      {dashboardStats.recentOrders.length === 0 ? (
+                        <p className="rounded-2xl bg-white px-4 py-4 text-sm text-slate-500">No orders have been placed yet.</p>
+                      ) : (
+                        <div className="space-y-3">
+                          {dashboardStats.recentOrders.map((order) => (
+                            <div key={order.id} className="grid gap-3 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200/70 md:grid-cols-[1fr_auto_auto] md:items-center">
+                              <div className="min-w-0">
+                                <p className="truncate text-sm font-bold text-slate-950">{order.id}</p>
+                                <p className="mt-1 text-xs text-slate-500">
+                                  {order.user?.name || 'Unknown user'} • {new Date(order.createdAt).toLocaleDateString()}
+                                </p>
+                              </div>
+                              <span className="w-fit rounded-full bg-cream px-3 py-1 text-xs font-bold capitalize text-maroon">
+                                {order.status}
+                              </span>
+                              <p className="text-sm font-black text-slate-950">Rs. {Number(order.totalAmount).toFixed(0)}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </section>
+
+                    <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+                      <p className="text-xs font-bold uppercase tracking-[0.24em] text-slate-500">Snapshot</p>
+                      <h4 className="mt-2 text-xl font-semibold text-slate-950">Store health</h4>
+                      <div className="mt-5 space-y-3">
+                        <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
+                          <span className="text-sm font-semibold text-slate-600">Products</span>
+                          <span className="text-sm font-black text-slate-950">{products.length}</span>
+                        </div>
+                        <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
+                          <span className="text-sm font-semibold text-slate-600">Trending</span>
+                          <span className="text-sm font-black text-slate-950">{products.filter((product) => product.isTrending).length}</span>
+                        </div>
+                        <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
+                          <span className="text-sm font-semibold text-slate-600">Active coupons</span>
+                          <span className="text-sm font-black text-slate-950">{coupons.filter((coupon) => coupon.isActive).length}</span>
+                        </div>
+                        <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
+                          <span className="text-sm font-semibold text-slate-600">Combos</span>
+                          <span className="text-sm font-black text-slate-950">{combos.length}</span>
+                        </div>
+                      </div>
+                    </section>
+                  </div>
+                </div>
+              )}
+
+              {activeSection === 'notifications' && (
+                <div className="space-y-5">
+                  <div className="flex flex-col gap-3 rounded-3xl border border-slate-200 bg-slate-50 p-5 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-[0.24em] text-slate-500">Notifications</p>
+                      <h4 className="mt-2 text-xl font-semibold text-slate-950">
+                        {notifications.length} notification{notifications.length === 1 ? '' : 's'}
+                      </h4>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={markNotificationsRead}
+                        disabled={notifications.length === 0}
+                        className="rounded-full border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 shadow hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        Mark all read
+                      </button>
+                      <button
+                        type="button"
+                        onClick={clearNotifications}
+                        disabled={notifications.length === 0}
+                        className="rounded-full bg-slate-950 px-4 py-2 text-xs font-semibold text-white shadow hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        Clear all
+                      </button>
+                    </div>
+                  </div>
+
+                  {notifications.length === 0 ? (
+                    <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-8 text-center">
+                      <h4 className="text-lg font-semibold text-slate-950">No notifications yet</h4>
+                      <p className="mt-2 text-sm text-slate-500">New order alerts will appear here automatically.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {notifications.map((notification) => (
+                        <div
+                          key={notification.id}
+                          className={`rounded-3xl border p-4 shadow-sm ${
+                            notification.read
+                              ? 'border-slate-200 bg-white'
+                              : 'border-green-200 bg-green-50'
+                          }`}
+                        >
+                          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                            <div className="min-w-0">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <p className="text-sm font-black text-slate-950">{notification.title}</p>
+                                {!notification.read && (
+                                  <span className="rounded-full bg-green-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-white">
+                                    New
+                                  </span>
+                                )}
+                              </div>
+                              <p className="mt-1 text-sm text-slate-600">{notification.message}</p>
+                              <p className="mt-2 text-xs font-semibold text-slate-400">
+                                {new Date(notification.createdAt).toLocaleString()}
+                              </p>
+                            </div>
+                            {notification.orderId && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setActiveSection('orders');
+                                  setSearch(notification.orderId || '');
+                                  setNotifications((current) =>
+                                    current.map((item) =>
+                                      item.id === notification.id ? { ...item, read: true } : item
+                                    )
+                                  );
+                                }}
+                                className="w-full rounded-full bg-maroon px-4 py-2 text-xs font-semibold text-secondary shadow hover:bg-maroon/90 sm:w-auto"
+                              >
+                                View order
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {activeSection === 'storeInventory' && (
+                <div className="space-y-5">
+                  <div className="grid gap-3 sm:grid-cols-4">
+                    {stores.map((store) => {
+                      const active = activeStore?.id === store.id;
+                      const available = (store.inventory || []).reduce((sum: number, record: any) => sum + Number(record.availableStock || 0), 0);
+                      const remaining = (store.inventory || []).reduce((sum: number, record: any) => sum + Number(record.remainingStock || 0), 0);
+
+                      return (
+                        <button
+                          key={store.id}
+                          type="button"
+                          onClick={() => {
+                            setActiveStoreId(store.id);
+                            resetInventoryForm();
+                            setInventoryMessage('');
+                          }}
+                          className={`rounded-3xl p-4 text-left shadow-sm ring-1 transition ${
+                            active
+                              ? 'bg-maroon text-white ring-maroon'
+                              : 'bg-white text-slate-950 ring-slate-200 hover:bg-maroon/5 hover:ring-maroon/20'
+                          }`}
+                        >
+                          <p className={`text-xs font-black uppercase tracking-[0.18em] ${active ? 'text-white/70' : 'text-slate-400'}`}>{store.name}</p>
+                          <p className="mt-3 text-2xl font-black">{store.inventory?.length || 0}</p>
+                          <p className={`mt-1 text-xs font-semibold ${active ? 'text-white/70' : 'text-slate-500'}`}>
+                            {remaining} remaining / {available} available
+                          </p>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <form onSubmit={handleSubmitInventory} className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-[0.24em] text-maroon">{activeStore?.name || 'Store inventory'}</p>
+                        <h4 className="mt-1 text-xl font-semibold text-slate-950">{editingInventory ? 'Edit stock record' : 'Add product to store'}</h4>
+                      </div>
+                      {editingInventory && (
+                        <button
+                          type="button"
+                          onClick={resetInventoryForm}
+                          className="rounded-full border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-100"
+                        >
+                          Cancel edit
+                        </button>
+                      )}
+                    </div>
+                    <div className="grid gap-3 md:grid-cols-6">
+                      <select
+                        value={inventoryForm.entryType}
+                        onChange={(event) => setInventoryForm({
+                          ...inventoryForm,
+                          entryType: event.target.value,
+                          productId: '',
+                          customName: '',
+                          customCategory: '',
+                          customPrice: '',
+                          size: 'Default',
+                        })}
+                        disabled={!!editingInventory}
+                        className="rounded-3xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm disabled:bg-slate-100"
+                      >
+                        <option value="online">Online product</option>
+                        <option value="offline">Offline product</option>
+                      </select>
+                      {inventoryForm.entryType === 'online' ? (
+                        <select
+                          value={inventoryForm.productId}
+                          onChange={(event) => {
+                            const product = products.find((item) => item.id === event.target.value);
+                            setInventoryForm({
+                              ...inventoryForm,
+                              productId: event.target.value,
+                              size: product?.sizes?.[0] || 'Default',
+                            });
+                          }}
+                          disabled={!!editingInventory}
+                          required={inventoryForm.entryType === 'online'}
+                          className="rounded-3xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm disabled:bg-slate-100"
+                        >
+                          <option value="">Select product</option>
+                          {products.map((product) => (
+                            <option key={product.id} value={product.id}>{product.name}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <input
+                          value={inventoryForm.customName}
+                          onChange={(event) => setInventoryForm({ ...inventoryForm, customName: event.target.value })}
+                          disabled={!!editingInventory}
+                          required={inventoryForm.entryType === 'offline'}
+                          placeholder="Offline product name"
+                          className="rounded-3xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm disabled:bg-slate-100"
+                        />
+                      )}
+                      <select
+                        value={inventoryForm.size}
+                        onChange={(event) => setInventoryForm({ ...inventoryForm, size: event.target.value })}
+                        disabled={!!editingInventory}
+                        className="rounded-3xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm disabled:bg-slate-100"
+                      >
+                        {(() => {
+                          const selectedProduct = products.find((product) => product.id === inventoryForm.productId);
+                          const sizes = inventoryForm.entryType === 'online' && selectedProduct?.sizes?.length ? selectedProduct.sizes : ['Default', 'S', 'M', 'L', 'XL', 'XXL'];
+                          return sizes.map((size: string) => <option key={size} value={size}>{size}</option>);
+                        })()}
+                      </select>
+                      {inventoryForm.entryType === 'offline' && (
+                        <>
+                          <input
+                            value={inventoryForm.customCategory}
+                            onChange={(event) => setInventoryForm({ ...inventoryForm, customCategory: event.target.value })}
+                            disabled={!!editingInventory}
+                            placeholder="Category"
+                            className="rounded-3xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm disabled:bg-slate-100"
+                          />
+                          <input
+                            value={inventoryForm.customPrice}
+                            onChange={(event) => setInventoryForm({ ...inventoryForm, customPrice: event.target.value.replace(/[^\d.]/g, '') })}
+                            disabled={!!editingInventory}
+                            type="number"
+                            min={0}
+                            placeholder="Price"
+                            className="rounded-3xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm disabled:bg-slate-100"
+                          />
+                        </>
+                      )}
+                      <input
+                        value={inventoryForm.availableStock}
+                        onChange={(event) => setInventoryForm({ ...inventoryForm, availableStock: event.target.value.replace(/\D/g, '') })}
+                        required
+                        type="number"
+                        min={0}
+                        placeholder="Available stock"
+                        className="rounded-3xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm"
+                      />
+                      <input
+                        value={inventoryForm.soldCount}
+                        onChange={(event) => setInventoryForm({ ...inventoryForm, soldCount: event.target.value.replace(/\D/g, '') })}
+                        required
+                        type="number"
+                        min={0}
+                        placeholder="Sold count"
+                        className="rounded-3xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm"
+                      />
+                      <button
+                        type="submit"
+                        className="rounded-3xl bg-maroon px-5 py-3 text-sm font-semibold text-white shadow hover:bg-maroon/90"
+                      >
+                        {editingInventory ? 'Update Stock' : 'Add Product'}
+                      </button>
+                    </div>
+                    {inventoryMessage && <p className="mt-3 rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-700">{inventoryMessage}</p>}
+                  </form>
+
+                  <AdminTable
+                    headers={['Product Image', 'Product Name', 'Category', 'Size', 'Price', 'Available Stock', 'Sold Count', 'Remaining Stock', 'Actions']}
+                    rows={activeStoreInventory.map((record: any) => [
+                      <img src={getProductImageUrl(record.product?.images)} alt={record.product?.name || 'Product'} className="h-14 w-14 rounded-2xl object-cover" />,
+                      record.product?.name || record.customName || 'Offline product',
+                      record.product?.category || record.customCategory || 'Offline',
+                      record.size || 'Default',
+                      `Rs. ${Number(record.product?.offerPrice ?? record.product?.price ?? record.customPrice ?? 0).toFixed(0)}`,
+                      record.availableStock,
+                      record.soldCount,
+                      <span className={`rounded-full px-3 py-1 text-xs font-bold ${record.remainingStock > 0 ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+                        {record.remainingStock}
+                      </span>,
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleEditInventory(record)}
+                          className="rounded-full border border-maroon bg-maroon/10 px-3 py-1 text-xs font-semibold text-maroon hover:bg-maroon/15"
+                        >
+                          Edit Stock
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleEditInventory(record)}
+                          className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-100"
+                        >
+                          Update Sold Count
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteInventory(record.id)}
+                          className="rounded-full border border-slate-300 bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-200"
+                        >
+                          Delete
+                        </button>
+                      </div>,
+                    ])}
+                  />
+                </div>
               )}
 
               {activeSection === 'products' && (
@@ -582,7 +1417,7 @@ const AdminDashboard = () => {
                         type="checkbox"
                         checked={form.isTrending}
                         onChange={(event) => setForm({ ...form, isTrending: event.target.checked })}
-                        className="h-5 w-5 rounded border-slate-300 text-orange-600 focus:ring-orange-500"
+                        className="h-5 w-5 rounded border-slate-300 text-maroon focus:ring-maroon/20"
                       />
                       Trending product
                     </label>
@@ -596,7 +1431,7 @@ const AdminDashboard = () => {
                     />
                     <button
                       type="submit"
-                      className="col-span-full rounded-3xl bg-orange-600 px-6 py-3 text-sm font-semibold text-white shadow hover:bg-orange-700"
+                      className="col-span-full rounded-3xl bg-maroon px-6 py-3 text-sm font-semibold text-white shadow hover:bg-maroon/90"
                     >
                       Save product
                     </button>
@@ -629,7 +1464,7 @@ const AdminDashboard = () => {
                       <button
                         type="button"
                         onClick={() => navigate(`/admin/product/${product.id}`)}
-                        className="rounded-full border border-orange-500 bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-700 transition hover:bg-orange-100"
+                        className="rounded-full border border-maroon bg-maroon/10 px-3 py-1 text-xs font-semibold text-maroon transition hover:bg-maroon/10"
                       >
                         Edit
                       </button>
@@ -669,7 +1504,7 @@ const AdminDashboard = () => {
                       <button
                         type="button"
                         onClick={() => navigate(`/admin/product/${product.id}`)}
-                        className="rounded-full border border-orange-500 bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-700 transition hover:bg-orange-100"
+                        className="rounded-full border border-maroon bg-maroon/10 px-3 py-1 text-xs font-semibold text-maroon transition hover:bg-maroon/10"
                       >
                         Edit
                       </button>
@@ -711,7 +1546,7 @@ const AdminDashboard = () => {
                         />
                         <button
                           type="submit"
-                          className="rounded-3xl bg-orange-600 px-6 py-3 text-sm font-semibold text-white shadow hover:bg-orange-700"
+                          className="rounded-3xl bg-maroon px-6 py-3 text-sm font-semibold text-white shadow hover:bg-maroon/90"
                         >
                           Save category
                         </button>
@@ -738,7 +1573,7 @@ const AdminDashboard = () => {
                         <div className="flex items-center gap-3">
                           <button
                             type="submit"
-                            className="rounded-3xl bg-orange-600 px-6 py-3 text-sm font-semibold text-white shadow hover:bg-orange-700"
+                            className="rounded-3xl bg-maroon px-6 py-3 text-sm font-semibold text-white shadow hover:bg-maroon/90"
                           >
                             Update photo
                           </button>
@@ -771,7 +1606,7 @@ const AdminDashboard = () => {
                           <button
                             type="button"
                             onClick={() => handleEditCategory(category)}
-                            className="rounded-full border border-orange-500 bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-700 transition hover:bg-orange-100"
+                            className="rounded-full border border-maroon bg-maroon/10 px-3 py-1 text-xs font-semibold text-maroon transition hover:bg-maroon/10"
                           >
                             Edit photo
                           </button>
@@ -786,6 +1621,138 @@ const AdminDashboard = () => {
                       ) : (
                         <span className="text-slate-400">N/A</span>
                       ),
+                    ])}
+                  />
+                </>
+              )}
+
+              {activeSection === 'combos' && (
+                <>
+                  <div className="mb-5 rounded-3xl border border-slate-200 bg-slate-50 p-5">
+                    <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <h4 className="text-lg font-semibold text-slate-900">
+                          {editingCombo ? 'Edit Combo Product' : 'Add Combo Product'}
+                        </h4>
+                        <p className="mt-1 text-sm text-slate-500">Upload bundle offers for the homepage combo section.</p>
+                      </div>
+                      {editingCombo && (
+                        <button
+                          type="button"
+                          onClick={resetComboForm}
+                          className="rounded-full border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 shadow hover:bg-slate-100"
+                        >
+                          Cancel edit
+                        </button>
+                      )}
+                    </div>
+                    {comboMessage && (
+                      <p className="mb-4 rounded-2xl bg-slate-100 px-4 py-3 text-sm text-slate-700">
+                        {comboMessage}
+                      </p>
+                    )}
+                    <form onSubmit={handleSubmitCombo} className="grid gap-4 md:grid-cols-3">
+                      <input
+                        value={comboForm.name}
+                        onChange={(event) => setComboForm({ ...comboForm, name: event.target.value })}
+                        required
+                        placeholder="Combo name"
+                        className="rounded-3xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm"
+                      />
+                      <input
+                        value={comboForm.mrp}
+                        onChange={(event) => setComboForm({ ...comboForm, mrp: event.target.value })}
+                        type="number"
+                        min={0}
+                        placeholder="MRP"
+                        className="rounded-3xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm"
+                      />
+                      <input
+                        value={comboForm.offerPrice}
+                        onChange={(event) => setComboForm({ ...comboForm, offerPrice: event.target.value })}
+                        required
+                        type="number"
+                        min={0}
+                        placeholder="Offer price"
+                        className="rounded-3xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm"
+                      />
+                      <input
+                        value={comboForm.stock}
+                        onChange={(event) => setComboForm({ ...comboForm, stock: event.target.value })}
+                        required
+                        type="number"
+                        min={0}
+                        placeholder="Stock"
+                        className="rounded-3xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm"
+                      />
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(event) => setComboImage(event.target.files?.[0] || null)}
+                        required={!editingCombo}
+                        className="rounded-3xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm"
+                      />
+                      <input
+                        value={comboForm.sizes}
+                        onChange={(event) => setComboForm({ ...comboForm, sizes: event.target.value })}
+                        required
+                        placeholder="Sizes"
+                        className="rounded-3xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm"
+                      />
+                      <label className="flex items-center gap-3 rounded-3xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm">
+                        <input
+                          type="checkbox"
+                          checked={comboForm.isActive}
+                          onChange={(event) => setComboForm({ ...comboForm, isActive: event.target.checked })}
+                          className="h-5 w-5 rounded border-slate-300 text-maroon focus:ring-maroon/20"
+                        />
+                        Active on homepage
+                      </label>
+                      <textarea
+                        value={comboForm.description}
+                        onChange={(event) => setComboForm({ ...comboForm, description: event.target.value })}
+                        placeholder="Combo description"
+                        rows={3}
+                        className="col-span-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm"
+                      />
+                      <button
+                        type="submit"
+                        className="col-span-full rounded-3xl bg-maroon px-6 py-3 text-sm font-semibold text-white shadow hover:bg-maroon/90"
+                      >
+                        {editingCombo ? 'Update combo' : 'Save combo'}
+                      </button>
+                    </form>
+                  </div>
+
+                  <AdminTable
+                    headers={['Preview', 'Name', 'MRP', 'Offer Price', 'Stock', 'Status', 'Actions']}
+                    rows={filteredCombos.map((combo) => [
+                      <img
+                        src={getComboImageUrl(combo.image)}
+                        alt={combo.name}
+                        className="h-16 w-24 rounded-2xl object-cover"
+                      />,
+                      combo.name,
+                      combo.mrp ? `Rs. ${Number(combo.mrp).toFixed(2)}` : 'N/A',
+                      `Rs. ${Number(combo.offerPrice).toFixed(2)}`,
+                      combo.stock,
+                      combo.isActive ? 'Active' : 'Hidden',
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleEditCombo(combo)}
+                          className="rounded-full border border-maroon bg-maroon/10 px-3 py-1 text-xs font-semibold text-maroon transition hover:bg-maroon/10"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteCombo(combo.id)}
+                          className="rounded-full border border-slate-300 bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 transition hover:bg-slate-200"
+                        >
+                          Delete
+                        </button>
+                      </div>,
                     ])}
                   />
                 </>
@@ -842,14 +1809,14 @@ const AdminDashboard = () => {
                           type="checkbox"
                           checked={bannerForm.isActive}
                           onChange={(event) => setBannerForm({ ...bannerForm, isActive: event.target.checked })}
-                          className="h-5 w-5 rounded border-slate-300 text-orange-600 focus:ring-orange-500"
+                          className="h-5 w-5 rounded border-slate-300 text-maroon focus:ring-maroon/20"
                         />
                         Active on homepage
                       </label>
                       <button
                         type="submit"
                         disabled={!editingBanner && banners.length >= 3}
-                        className="col-span-full rounded-3xl bg-orange-600 px-6 py-3 text-sm font-semibold text-white shadow hover:bg-orange-700 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="col-span-full rounded-3xl bg-maroon px-6 py-3 text-sm font-semibold text-white shadow hover:bg-maroon/90 disabled:cursor-not-allowed disabled:opacity-60"
                       >
                         {editingBanner ? 'Update banner' : 'Save banner'}
                       </button>
@@ -871,13 +1838,121 @@ const AdminDashboard = () => {
                         <button
                           type="button"
                           onClick={() => handleEditBanner(banner)}
-                          className="rounded-full border border-orange-500 bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-700 transition hover:bg-orange-100"
+                          className="rounded-full border border-maroon bg-maroon/10 px-3 py-1 text-xs font-semibold text-maroon transition hover:bg-maroon/10"
                         >
                           Edit
                         </button>
                         <button
                           type="button"
                           onClick={() => handleDeleteBanner(banner.id)}
+                          className="rounded-full border border-slate-300 bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 transition hover:bg-slate-200"
+                        >
+                          Delete
+                        </button>
+                      </div>,
+                    ])}
+                  />
+                </>
+              )}
+
+              {activeSection === 'coupons' && (
+                <>
+                  <div className="mb-5 rounded-3xl border border-slate-200 bg-slate-50 p-5">
+                    <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <h4 className="text-lg font-semibold text-slate-900">
+                          {editingCoupon ? 'Edit Coupon' : 'Add Coupon'}
+                        </h4>
+                        <p className="mt-1 text-sm text-slate-500">Create coupon codes customers can apply during checkout.</p>
+                      </div>
+                      {editingCoupon && (
+                        <button
+                          type="button"
+                          onClick={resetCouponForm}
+                          className="rounded-full border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 shadow hover:bg-slate-100"
+                        >
+                          Cancel edit
+                        </button>
+                      )}
+                    </div>
+                    {couponMessage && (
+                      <p className="mb-4 rounded-2xl bg-slate-100 px-4 py-3 text-sm text-slate-700">
+                        {couponMessage}
+                      </p>
+                    )}
+                    <form onSubmit={handleSubmitCoupon} className="grid gap-4 md:grid-cols-3">
+                      <input
+                        value={couponForm.code}
+                        onChange={(event) => setCouponForm({ ...couponForm, code: event.target.value.toUpperCase() })}
+                        required
+                        placeholder="Coupon code"
+                        className="rounded-3xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm"
+                      />
+                      <select
+                        value={couponForm.discountType}
+                        onChange={(event) => setCouponForm({ ...couponForm, discountType: event.target.value })}
+                        className="rounded-3xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm"
+                      >
+                        <option value="percentage">Percentage discount</option>
+                        <option value="fixed">Fixed amount discount</option>
+                      </select>
+                      <input
+                        value={couponForm.discountValue}
+                        onChange={(event) => setCouponForm({ ...couponForm, discountValue: event.target.value })}
+                        required
+                        type="number"
+                        min={1}
+                        max={couponForm.discountType === 'percentage' ? 100 : undefined}
+                        placeholder={couponForm.discountType === 'percentage' ? 'Discount %' : 'Discount amount'}
+                        className="rounded-3xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm"
+                      />
+                      <input
+                        value={couponForm.minOrderAmount}
+                        onChange={(event) => setCouponForm({ ...couponForm, minOrderAmount: event.target.value })}
+                        type="number"
+                        min={0}
+                        placeholder="Minimum order amount"
+                        className="rounded-3xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm"
+                      />
+                      <label className="flex items-center gap-3 rounded-3xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm">
+                        <input
+                          type="checkbox"
+                          checked={couponForm.isActive}
+                          onChange={(event) => setCouponForm({ ...couponForm, isActive: event.target.checked })}
+                          className="h-5 w-5 rounded border-slate-300 text-maroon focus:ring-maroon/20"
+                        />
+                        Active coupon
+                      </label>
+                      <button
+                        type="submit"
+                        className="rounded-3xl bg-maroon px-6 py-3 text-sm font-semibold text-white shadow hover:bg-maroon/90"
+                      >
+                        {editingCoupon ? 'Update coupon' : 'Save coupon'}
+                      </button>
+                    </form>
+                  </div>
+
+                  <AdminTable
+                    headers={['Code', 'Type', 'Value', 'Min Order', 'Status', 'Actions']}
+                    rows={filteredCoupons.map((coupon) => [
+                      <span className="font-bold">{coupon.code}</span>,
+                      coupon.discountType === 'percentage' ? 'Percentage' : 'Fixed amount',
+                      coupon.discountType === 'percentage'
+                        ? `${Number(coupon.discountValue).toFixed(0)}%`
+                        : `Rs. ${Number(coupon.discountValue).toFixed(0)}`,
+                      coupon.minOrderAmount ? `Rs. ${Number(coupon.minOrderAmount).toFixed(0)}` : 'None',
+                      coupon.isActive ? 'Active' : 'Hidden',
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleEditCoupon(coupon)}
+                          className="rounded-full border border-maroon bg-maroon/10 px-3 py-1 text-xs font-semibold text-maroon transition hover:bg-maroon/10"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteCoupon(coupon.id)}
                           className="rounded-full border border-slate-300 bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 transition hover:bg-slate-200"
                         >
                           Delete
@@ -906,7 +1981,10 @@ const AdminDashboard = () => {
                   rows={filteredOrders.map((order) => [
                     order.id,
                     `${order.user?.name || 'Unknown'} (${order.user?.email || 'unknown'})`,
-                    order.items?.map((item: any) => `${item.product?.name || 'Item'} x${item.quantity}`).join(', '),
+                    order.items?.map((item: any) => {
+                      const product = item.product || item.comboProduct;
+                      return `${product?.name || 'Item'}${item.size ? ` (${item.size})` : ''} x${item.quantity}`;
+                    }).join(', '),
                     `Rs. ${Number(order.totalAmount).toFixed(2)}`,
                     order.paymentStatus || 'pending',
                     order.status,
@@ -995,7 +2073,7 @@ const TrendingSelect = ({ value, onChange }: { value: boolean; onChange: (value:
     onChange={(event) => onChange(event.target.value === 'true')}
     className={`rounded-full border px-3 py-2 text-xs font-semibold shadow-sm focus:outline-none focus:ring-2 ${
       value
-        ? 'border-orange-500 bg-orange-50 text-orange-700 focus:ring-orange-200'
+        ? 'border-maroon bg-maroon/10 text-maroon focus:ring-maroon/20'
         : 'border-slate-300 bg-slate-100 text-slate-700 focus:ring-slate-200'
     }`}
   >

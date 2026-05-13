@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { fetchCart, removeCartItem, updateCartItem } from '../services/cart';
 import { getProductImageUrl } from '../services/product';
+import { getComboImageUrl } from '../services/combo';
 import { useAuth } from '../context/AuthContext';
 import { ProductPrice, getEffectivePrice } from '../utils/pricing';
 
@@ -37,7 +38,10 @@ const CartPage = () => {
     loadCart();
   }, [isAuthenticated]);
 
-  const total = useMemo(() => items.reduce((sum, item) => sum + getEffectivePrice(item.product) * item.quantity, 0), [items]);
+  const total = useMemo(() => items.reduce((sum, item) => {
+    const product = item.product || item.comboProduct;
+    return sum + getEffectivePrice(product) * item.quantity;
+  }, 0), [items]);
 
   const updateQuantity = async (id: string, quantity: number) => {
     await updateCartItem(id, quantity);
@@ -60,19 +64,21 @@ const CartPage = () => {
         {error && <p className="mt-4 sm:mt-6 rounded-2xl bg-red-100 px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-red-700">{error}</p>}
         {items.length === 0 ? (
           <div className="mt-4 sm:mt-6 text-slate-500 text-sm sm:text-base">
-            Your cart is empty. <Link to="/products" className="text-orange-600 hover:text-orange-700 font-semibold">Shop now.</Link>
+            Your cart is empty. <Link to="/products" className="text-maroon hover:text-maroon/80 font-semibold">Shop now.</Link>
           </div>
         ) : (
           <div className="mt-4 sm:mt-6 space-y-3 sm:space-y-4">
             {items.map((item) => {
-              const imageUrl = getProductImageUrl(item.product.images);
+              const product = item.product || item.comboProduct;
+              const imageUrl = item.comboProduct ? getComboImageUrl(product.image) : getProductImageUrl(product.images);
               return (
                 <div key={item.id} className="flex flex-col gap-3 sm:gap-4 rounded-2xl sm:rounded-3xl border border-slate-200 bg-slate-50 p-3 sm:p-4 md:flex-row md:items-center md:justify-between">
                   <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-                    <img src={imageUrl} alt={item.product.name} className="h-20 w-20 sm:h-24 sm:w-24 rounded-2xl object-cover flex-shrink-0" />
+                    <img src={imageUrl} alt={product.name} className="h-20 w-20 sm:h-24 sm:w-24 rounded-2xl object-cover flex-shrink-0" />
                     <div className="min-w-0">
-                      <p className="font-semibold text-slate-900 text-sm sm:text-base truncate">{item.product.name}</p>
-                      <p className="text-xs sm:text-sm text-slate-500">{item.product.category}</p>
+                      <p className="font-semibold text-slate-900 text-sm sm:text-base truncate">{product.name}</p>
+                      <p className="text-xs sm:text-sm text-slate-500">{item.comboProduct ? 'Combo offer' : product.category}</p>
+                      {item.size && <p className="text-xs sm:text-sm text-slate-500">Size: {item.size}</p>}
                     </div>
                   </div>
                   <div className="flex items-center gap-2 sm:gap-3">
@@ -84,9 +90,9 @@ const CartPage = () => {
                       className="w-16 sm:w-20 rounded-xl border border-slate-300 bg-white p-2 text-center text-sm"
                     />
                     <div className="w-24 sm:w-32">
-                      <ProductPrice product={item.product} quantity={item.quantity} size="sm" align="right" />
+                      <ProductPrice product={product} quantity={item.quantity} size="sm" align="right" />
                     </div>
-                    <button onClick={() => removeItem(item.id)} className="text-xs sm:text-sm text-orange-600 hover:text-orange-700 font-semibold whitespace-nowrap">Remove</button>
+                    <button onClick={() => removeItem(item.id)} className="text-xs sm:text-sm text-maroon hover:text-maroon/80 font-semibold whitespace-nowrap">Remove</button>
                   </div>
                 </div>
               );

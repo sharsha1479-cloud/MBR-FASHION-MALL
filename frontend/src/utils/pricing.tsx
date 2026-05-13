@@ -40,14 +40,14 @@ export const ProductPrice = ({
   const discounted = hasDiscount(product);
   const sizeClass = {
     sm: 'text-sm',
-    md: 'text-xl',
+    md: 'text-base sm:text-xl',
     lg: 'text-2xl sm:text-3xl',
   }[size];
 
   return (
     <div className={`flex flex-wrap items-baseline gap-x-2 gap-y-1 ${align === 'right' ? 'justify-end text-right' : ''}`}>
       {discounted && (
-        <span className={`text-sm font-semibold line-through ${tone === 'light' ? 'text-slate-300' : 'text-slate-400'}`}>
+        <span className={`text-xs font-semibold line-through sm:text-sm ${tone === 'light' ? 'text-slate-300' : 'text-slate-400'}`}>
           {formatPrice(mrp)}
         </span>
       )}
