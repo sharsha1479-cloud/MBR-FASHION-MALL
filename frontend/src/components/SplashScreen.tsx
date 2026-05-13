@@ -11,8 +11,8 @@ const SplashScreen = ({ onComplete }: SplashScreenProps) => {
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsVisible(false);
-      setTimeout(onComplete, 500); // Wait for exit animation
-    }, 2500); // Show for 2.5 seconds
+      setTimeout(onComplete, 500);
+    }, 2500);
 
     return () => clearTimeout(timer);
   }, [onComplete]);
@@ -27,7 +27,6 @@ const SplashScreen = ({ onComplete }: SplashScreenProps) => {
           className="fixed inset-0 z-50 flex items-center justify-center bg-secondary"
         >
           <div className="text-center">
-            {/* Logo Animation */}
             <motion.div
               initial={{ scale: 8, opacity: 0, rotate: -8 }}
               animate={{ scale: 1, opacity: 1, rotate: 0 }}
@@ -38,42 +37,26 @@ const SplashScreen = ({ onComplete }: SplashScreenProps) => {
               }}
               className="mb-6"
             >
-              <div className="w-24 h-24 sm:w-32 sm:h-32 mx-auto rounded-full bg-maroon flex items-center justify-center shadow-2xl shadow-maroon/30">
-                <span className="text-3xl sm:text-4xl font-extrabold text-secondary tracking-wider">
-                  MBR
-                </span>
-              </div>
+              <img
+                src="/mbrlogo.png"
+                alt="MBR The Fashion Hub"
+                className="mx-auto h-auto w-56 object-contain sm:w-72 md:w-80"
+              />
             </motion.div>
 
-            {/* Brand Name */}
-            <motion.h1
-              initial={{ y: 34, opacity: 0, letterSpacing: '0.35em' }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{
-                duration: 0.75,
-                delay: 1.15,
-                ease: [0.22, 1, 0.36, 1],
-              }}
-              className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-primary mb-2 tracking-[0.15em] uppercase"
-            >
-              Fashion Hub
-            </motion.h1>
-
-            {/* Tagline */}
             <motion.p
               initial={{ y: 30, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{
-                duration: 0.6,
-                delay: 1.45,
-                ease: 'easeOut',
+                duration: 0.7,
+                delay: 1.25,
+                ease: [0.22, 1, 0.36, 1],
               }}
-              className="text-sm sm:text-base text-maroon/80 font-medium"
+              className="text-xl font-extrabold tracking-[0.08em] text-primary sm:text-2xl md:text-3xl"
             >
-              Where Style Meets Elegance
+              Men&apos;s Fashion Starts Here
             </motion.p>
 
-            {/* Loading Dots */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}

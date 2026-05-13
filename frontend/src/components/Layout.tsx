@@ -233,22 +233,22 @@ const Layout = ({ children }: { children: ReactNode }) => {
 
   const navLinks = (
     <>
-      <Link to="/products" className="block text-primary transition-colors duration-300 hover:text-primary hover:border-b-2 hover:border-primary" onClick={closeMobile}>
+      <Link to="/products" className="block text-primary transition-colors duration-300 hover:text-primary hover:border-b-2 hover:border-primary md:text-lg md:font-bold" onClick={closeMobile}>
         Shop
       </Link>
-      <Link to="/cart" className="flex items-center text-primary transition-colors duration-300 hover:text-primary hover:border-b-2 hover:border-primary" onClick={closeMobile}>
+      <Link to="/cart" className="flex items-center text-primary transition-colors duration-300 hover:text-primary hover:border-b-2 hover:border-primary md:text-lg md:font-bold" onClick={closeMobile}>
         <span>Cart</span>
         <CountBadge count={cartCount} />
       </Link>
-      <Link to="/wishlist" className="flex items-center text-primary transition-colors duration-300 hover:text-primary hover:border-b-2 hover:border-primary" onClick={closeMobile}>
+      <Link to="/wishlist" className="flex items-center text-primary transition-colors duration-300 hover:text-primary hover:border-b-2 hover:border-primary md:text-lg md:font-bold" onClick={closeMobile}>
         <span>Wishlist</span>
         <CountBadge count={wishlistCount} />
       </Link>
-      <Link to="/orders" className="block text-primary transition-colors duration-300 hover:text-primary hover:border-b-2 hover:border-primary" onClick={closeMobile}>
+      <Link to="/orders" className="block text-primary transition-colors duration-300 hover:text-primary hover:border-b-2 hover:border-primary md:text-lg md:font-bold" onClick={closeMobile}>
         My Orders
       </Link>
       {user?.role === 'admin' && (
-        <Link to="/admin" className="block text-primary transition-colors duration-300 hover:text-primary hover:border-b-2 hover:border-primary" onClick={closeMobile}>
+        <Link to="/admin" className="block text-primary transition-colors duration-300 hover:text-primary hover:border-b-2 hover:border-primary md:text-lg md:font-bold" onClick={closeMobile}>
           Admin
         </Link>
       )}
@@ -258,20 +258,20 @@ const Layout = ({ children }: { children: ReactNode }) => {
   return (
     <div className="min-h-screen overflow-x-hidden bg-secondary text-primary flex flex-col">
       <header ref={headerRef} className="sticky top-0 z-50 bg-secondary text-primary border-b-4 border-maroon shadow-[0_6px_20px_rgba(0,0,0,0.08)]">
-        <div className="max-w-7xl mx-auto flex min-w-0 items-center justify-between gap-3 px-3 sm:px-6 py-2.5 sm:py-4">
-          <Link to="/" className="flex min-w-0 shrink items-center" aria-label="MBR The Fashion Hub home">
+        <div className="relative flex min-h-14 w-full min-w-0 items-center justify-end gap-2 py-2 pl-0 pr-3 sm:pr-6 md:grid md:min-h-0 md:grid-cols-[320px_1fr_260px] md:justify-between md:py-2.5 md:pl-3 md:pr-6 lg:grid-cols-[420px_1fr_320px] lg:pl-4 lg:pr-8">
+          <Link to="/" className="absolute left-4 top-1/2 flex min-w-0 -translate-y-1/2 items-center justify-start md:static md:translate-y-0 md:flex-none" aria-label="MBR The Fashion Hub home">
             <img
-              src="/images/site/mbr-logo.svg"
+              src="/mbrlogo.png"
               alt="MBR The Fashion Hub"
-              className="h-9 w-auto max-w-[150px] object-contain sm:h-12 sm:max-w-[230px]"
+              className="h-12 w-auto object-contain sm:h-16 md:h-auto md:w-[320px] md:max-h-16 lg:w-[400px] lg:max-h-20"
             />
           </Link>
 
-          <nav className="hidden md:flex items-center space-x-10">
+          <nav className="hidden md:flex items-center justify-center space-x-6 lg:space-x-8">
             {navLinks}
           </nav>
 
-          <div className="hidden md:flex items-center gap-3 sm:gap-4 relative">
+          <div className="hidden md:flex items-center justify-end gap-3 sm:gap-4 relative">
             <div className="relative">
               <button
                 type="button"

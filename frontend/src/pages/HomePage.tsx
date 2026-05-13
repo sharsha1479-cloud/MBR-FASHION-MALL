@@ -12,7 +12,7 @@ import { fetchCombos, getComboImageUrl } from '../services/combo';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 
-const NEW_ARRIVALS_COUNT = 8;
+const NEW_ARRIVALS_COUNT = 12;
 const NEW_ARRIVALS_ROTATION_MS = 12000;
 const ALL_PRODUCTS_CATEGORY = {
   value: 'all-products',
@@ -208,10 +208,10 @@ const HomePage = () => {
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               transition={{ duration: 0.8, delay: 0.2 }}
-              className="grid grid-cols-2 gap-2 rounded-2xl border border-white/25 bg-[#fff7ec]/95 p-2 shadow-2xl shadow-slate-950/25 sm:grid-cols-2 sm:gap-4 sm:rounded-3xl sm:p-4 md:grid-cols-3 md:gap-6 md:p-5 lg:grid-cols-4"
+              className="grid grid-cols-2 gap-2 rounded-2xl border border-white/25 bg-[#fff7ec]/95 p-2 shadow-2xl shadow-slate-950/25 sm:grid-cols-2 sm:gap-4 sm:rounded-3xl sm:p-4 md:grid-cols-3 md:gap-6 md:p-5"
             >
               {newArrivalProducts.map((product, index) => (
-                <div key={product.id} className={index >= 6 ? 'hidden sm:block' : ''}>
+                <div key={product.id} className={index >= 8 ? 'hidden sm:block' : ''}>
                   <ProductCard id={product.id} name={product.name} price={product.price} mrp={product.mrp} offerPrice={product.offerPrice} image={getProductImageUrl(product.images)} category={product.category} variant="featured" />
                 </div>
               ))}
@@ -248,7 +248,7 @@ const HomePage = () => {
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               transition={{ duration: 0.8, delay: 0.2 }}
-              className="grid gap-3 sm:gap-4 md:gap-6 grid-cols-2 sm:grid-cols-2 md:grid-cols-3"
+              className="grid grid-cols-2 gap-3 sm:grid-cols-2 sm:gap-4 md:grid-cols-4 md:gap-6"
             >
               {categoryTiles.map((category) => (
                 <CategoryCard
@@ -374,7 +374,7 @@ const HomePage = () => {
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="grid grid-cols-2 gap-3 sm:gap-6 md:gap-8 sm:grid-cols-2 md:grid-cols-3"
+            className="grid grid-cols-2 gap-3 sm:gap-6 md:grid-cols-4 md:gap-8"
           >
             {[
               {

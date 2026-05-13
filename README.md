@@ -1,10 +1,10 @@
 # MBR Fashion Hub
 
-A modern e-commerce website for MBR Fashion Hub built with React, TypeScript, Tailwind CSS, Node.js, Express, and MongoDB.
+A modern e-commerce website for MBR Fashion Hub built with React, TypeScript, Tailwind CSS, Node.js, Express, Prisma, and MySQL.
 
 ## Structure
 
-- `backend/` - API server with Express, MongoDB, JWT auth, Cloudinary uploads, and Razorpay order integration.
+- `backend/` - API server with Express, Prisma/MySQL, JWT auth, local Multer uploads, and Razorpay order integration.
 - `frontend/` - React + TypeScript + Tailwind shop interface, auth screens, cart, checkout, and admin dashboard.
 
 ## Setup
@@ -14,8 +14,10 @@ A modern e-commerce website for MBR Fashion Hub built with React, TypeScript, Ta
 1. `cd backend`
 2. `npm install`
 3. Copy `.env.example` to `.env`
-4. Provide values for `MONGO_URI`, `JWT_SECRET`, Cloudinary, and Razorpay credentials.
-5. `npm run dev`
+4. Provide values for `DATABASE_URL`, `JWT_SECRET`, and Razorpay credentials.
+5. `npx prisma migrate deploy`
+6. `npx prisma generate`
+7. `npm run dev`
 
 ### Frontend
 
@@ -27,5 +29,5 @@ A modern e-commerce website for MBR Fashion Hub built with React, TypeScript, Ta
 ## Notes
 
 - Admin actions require a user with `isAdmin: true` in the database.
-- Product images are uploaded to Cloudinary.
+- Product, banner, and combo images are stored locally in `backend/uploads` and served from `/uploads`.
 - Razorpay integration creates an order object and expects a payment fulfillment flow.

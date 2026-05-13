@@ -35,13 +35,11 @@ exports.getProducts = asyncHandler(async (req, res) => {
           {
             label: {
               contains: normalizedSearch,
-              mode: 'insensitive',
             },
           },
           {
             value: {
               contains: normalizedSearch,
-              mode: 'insensitive',
             },
           },
         ],
@@ -56,19 +54,16 @@ exports.getProducts = asyncHandler(async (req, res) => {
       {
         name: {
           contains: normalizedSearch,
-          mode: 'insensitive',
         },
       },
       {
         description: {
           contains: normalizedSearch,
-          mode: 'insensitive',
         },
       },
       {
         category: {
           contains: normalizedSearch,
-          mode: 'insensitive',
         },
       },
       ...(matchingCategoryValues.length > 0
@@ -88,7 +83,6 @@ exports.getProducts = asyncHandler(async (req, res) => {
     console.log('✅ Applying category filter:', normalizedCategory);
     where.category = {
       equals: normalizedCategory,
-      mode: 'insensitive',
     };
   }
 
@@ -105,12 +99,6 @@ exports.getProducts = asyncHandler(async (req, res) => {
     }
   }
 
-  if (size) {
-    where.sizes = {
-      has: size,
-    };
-  }
-
   if (trending !== undefined && trending !== '') {
     const isTrending = String(trending).toLowerCase() === 'true';
     where.isTrending = isTrending;
@@ -119,12 +107,19 @@ exports.getProducts = asyncHandler(async (req, res) => {
 
   console.log('📋 Final where filters:', JSON.stringify(where, null, 2));
 
-  const products = await prisma.product.findMany({
+  let products = await prisma.product.findMany({
     where,
     orderBy: {
       createdAt: 'desc',
     },
   });
+
+  if (size) {
+    const normalizedSize = String(size).trim();
+    products = products.filter((product) => (
+      Array.isArray(product.sizes) && product.sizes.includes(normalizedSize)
+    ));
+  }
 
   console.log(`📦 Found ${products.length} products`);
   res.json(products);
