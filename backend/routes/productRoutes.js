@@ -1,32 +1,19 @@
 const express = require('express');
-const multer = require('multer');
-const path = require('path');
 const { protect, admin } = require('../middleware/authMiddleware');
+const { compressedAny } = require('../middleware/compressedUpload');
 const {
   getProducts,
   getProductById,
   createProduct,
   updateProduct,
   deleteProduct,
+  deleteVariant,
 } = require('../controllers/productController');
 
-const storage = multer.diskStorage({
-  destination: path.join(__dirname, '..', 'uploads'),
-  filename: (req, file, cb) => {
-    const uniqueName = `${Date.now()}-${Math.round(Math.random() * 1e9)}-${file.originalname.replace(/\s+/g, '-')}`;
-    cb(null, uniqueName);
-  },
-});
-
-const upload = multer({ storage });
-const productImages = upload.fields([
-  { name: 'image', maxCount: 1 },
-  { name: 'images', maxCount: 4 },
-  { name: 'images[]', maxCount: 4 },
-]);
 const router = express.Router();
 
-router.route('/').get(getProducts).post(protect, admin, productImages, createProduct);
-router.route('/:id').get(getProductById).put(protect, admin, productImages, updateProduct).delete(protect, admin, deleteProduct);
+router.route('/').get(getProducts).post(protect, admin, compressedAny, createProduct);
+router.route('/:id/variants/:variantId').delete(protect, admin, deleteVariant);
+router.route('/:id').get(getProductById).put(protect, admin, compressedAny, updateProduct).delete(protect, admin, deleteProduct);
 
 module.exports = router;

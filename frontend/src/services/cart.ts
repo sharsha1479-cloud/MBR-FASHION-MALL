@@ -9,10 +9,10 @@ export const fetchCart = async () => {
   return response.data;
 };
 
-export const addCartItem = async (productId: string, quantity: number, options?: { comboProductId?: string; size?: string }) => {
+export const addCartItem = async (productId: string, quantity: number, options?: { comboProductId?: string; comboVariantId?: string; variantId?: string; size?: string }) => {
   const payload = options?.comboProductId
-    ? { comboProductId: options.comboProductId, quantity, size: options.size }
-    : { productId, quantity };
+    ? { comboProductId: options.comboProductId, comboVariantId: options.comboVariantId, quantity, size: options.size }
+    : { productId, variantId: options?.variantId, quantity, size: options?.size };
   const response = await api.post('/cart', payload);
   notifyCartChanged();
   return response.data;

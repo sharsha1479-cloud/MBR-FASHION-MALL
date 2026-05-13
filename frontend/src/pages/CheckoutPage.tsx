@@ -49,7 +49,11 @@ const CheckoutPage = () => {
   const [couponMessage, setCouponMessage] = useState('');
 
   const subtotal = useMemo(
-    () => cartItems.reduce((sum, item) => sum + getEffectivePrice(item.product || item.comboProduct) * Number(item.quantity), 0),
+    () => cartItems.reduce((sum, item) => {
+      const product = item.product || item.comboProduct;
+      const price = item.comboProduct ? Number(item.price ?? item.comboVariant?.offerPrice ?? getEffectivePrice(product)) : Number(item.price ?? item.variant?.offerPrice ?? item.variant?.price ?? getEffectivePrice(product));
+      return sum + price * Number(item.quantity);
+    }, 0),
     [cartItems]
   );
   const total = Math.max(subtotal - discountAmount, 0);
@@ -157,13 +161,21 @@ const CheckoutPage = () => {
         handler: async (response: any) => {
           try {
             await createOrder({
-              orderItems: cartItems.map((item) => ({
-                product: item.product?.id,
-                comboProduct: item.comboProduct?.id,
-                quantity: item.quantity,
-                price: getEffectivePrice(item.product || item.comboProduct),
-                size: item.size,
-              })),
+              orderItems: cartItems.map((item) => {
+                const product = item.product || item.comboProduct;
+                const price = item.comboProduct ? Number(item.price ?? item.comboVariant?.offerPrice ?? getEffectivePrice(product)) : Number(item.price ?? item.variant?.offerPrice ?? item.variant?.price ?? getEffectivePrice(product));
+                return {
+                  product: item.product?.id,
+                  comboProduct: item.comboProduct?.id,
+                  comboVariant: item.comboVariant?.id || item.comboVariantId,
+                  quantity: item.quantity,
+                  price,
+                  variant: item.variant?.id || item.variantId,
+                  size: item.size,
+                  colorName: item.colorName,
+                  image: item.image,
+                };
+              }),
               subtotalAmount: subtotal,
               totalAmount: total,
               couponCode: appliedCoupon?.code,
@@ -222,16 +234,19 @@ const CheckoutPage = () => {
           <div className="mt-4 sm:mt-5 space-y-3 sm:space-y-4">
             {cartItems.map((item) => {
               const product = item.product || item.comboProduct;
-              const imageUrl = item.comboProduct ? getComboImageUrl(product.image) : getProductImageUrl(product.images);
+              const variantProduct = item.comboProduct ? (item.comboVariant || product) : (item.variant || product);
+              const itemPrice = item.comboProduct ? Number(item.price ?? variantProduct.offerPrice ?? 0) : Number(item.price ?? variantProduct.offerPrice ?? variantProduct.price ?? 0);
+              const imageUrl = item.comboProduct ? getComboImageUrl(item.image || item.comboVariant?.images?.[0] || product.image) : getProductImageUrl(item.image || item.variant?.images || product.images);
               return (
                 <div key={item.id} className="flex gap-3 sm:gap-4 border-b border-slate-200 pb-3 sm:pb-4">
                   <img src={imageUrl} alt={product.name} className="h-16 w-16 sm:h-20 sm:w-20 rounded-2xl object-cover flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-slate-900 text-sm sm:text-base truncate">{product.name}</p>
                     <p className="text-xs sm:text-sm text-slate-500">Qty {item.quantity}</p>
+                    {item.colorName && <p className="text-xs sm:text-sm text-slate-500">Color {item.colorName}</p>}
                     {item.size && <p className="text-xs sm:text-sm text-slate-500">Size {item.size}</p>}
                     <div className="mt-1">
-                      <ProductPrice product={product} quantity={item.quantity} size="sm" />
+                      <ProductPrice product={{ ...variantProduct, offerPrice: itemPrice }} quantity={item.quantity} size="sm" />
                     </div>
                   </div>
                 </div>

@@ -13,6 +13,94 @@ const verifyRazorpaySignature = ({ razorpayOrderId, razorpayPaymentId, signature
   return generated === signature;
 };
 
+const getVariantSizeStocks = (variant) => {
+  const rows = Array.isArray(variant.sizeStocks) && variant.sizeStocks.length > 0
+    ? variant.sizeStocks
+    : (variant.sizes || []).map((size, index) => ({
+        size,
+        stock: Number(variant.stock || 0),
+      }));
+
+  return rows.map((item) => ({
+    size: String(item.size ?? item.value ?? '').trim(),
+    stock: Math.max(0, parseInt(item.stock ?? 0, 10) || 0),
+  })).filter((item) => item.size);
+};
+
+const decrementVariantSizeStock = async (tx, variantId, size, quantity) => {
+  const variant = await tx.productVariant.findUnique({ where: { id: variantId } });
+  if (!variant) throw new Error('Selected product variant was not found.');
+
+  const selectedSize = String(size || '').trim();
+  const sizeStocks = getVariantSizeStocks(variant);
+  const sizeIndex = sizeStocks.findIndex((item) => item.size === selectedSize);
+  if (sizeStocks.length > 0 && sizeIndex === -1) {
+    throw new Error('Selected size is not available for this variant.');
+  }
+
+  if (sizeIndex !== -1) {
+    if (sizeStocks[sizeIndex].stock < quantity) {
+      throw new Error(`Only ${sizeStocks[sizeIndex].stock} left in stock for size ${selectedSize}.`);
+    }
+    sizeStocks[sizeIndex] = {
+      ...sizeStocks[sizeIndex],
+      stock: sizeStocks[sizeIndex].stock - quantity,
+    };
+  }
+
+  const nextStock = sizeStocks.reduce((sum, item) => sum + Number(item.stock || 0), 0);
+  await tx.productVariant.update({
+    where: { id: variant.id },
+    data: {
+      sizeStocks,
+      sizes: sizeStocks.map((item) => item.size),
+      stock: nextStock,
+    },
+  });
+
+  await tx.product.update({
+    where: { id: variant.productId },
+    data: { stock: { decrement: quantity } },
+  });
+};
+
+const decrementComboVariantSizeStock = async (tx, variantId, size, quantity) => {
+  const variant = await tx.comboVariant.findUnique({ where: { id: variantId } });
+  if (!variant) throw new Error('Selected combo variant was not found.');
+
+  const selectedSize = String(size || '').trim();
+  const sizeStocks = getVariantSizeStocks(variant);
+  const sizeIndex = sizeStocks.findIndex((item) => item.size === selectedSize);
+  if (sizeStocks.length > 0 && sizeIndex === -1) {
+    throw new Error('Selected size is not available for this combo.');
+  }
+
+  if (sizeIndex !== -1) {
+    if (sizeStocks[sizeIndex].stock < quantity) {
+      throw new Error(`Only ${sizeStocks[sizeIndex].stock} left in stock for size ${selectedSize}.`);
+    }
+    sizeStocks[sizeIndex] = {
+      ...sizeStocks[sizeIndex],
+      stock: sizeStocks[sizeIndex].stock - quantity,
+    };
+  }
+
+  const nextStock = sizeStocks.reduce((sum, item) => sum + Number(item.stock || 0), 0);
+  await tx.comboVariant.update({
+    where: { id: variant.id },
+    data: {
+      sizeStocks,
+      sizes: sizeStocks.map((item) => item.size),
+      stock: nextStock,
+    },
+  });
+
+  await tx.comboProduct.update({
+    where: { id: variant.comboProductId },
+    data: { stock: { decrement: quantity } },
+  });
+};
+
 exports.createOrder = asyncHandler(async (req, res) => {
   const {
     orderItems,
@@ -75,15 +163,19 @@ exports.createOrder = asyncHandler(async (req, res) => {
           items: {
             create: orderItems.map((item) => ({
               productId: item.product || item.productId || null,
+              variantId: item.variant || item.variantId || null,
               comboProductId: item.comboProduct || item.comboProductId || null,
+              comboVariantId: item.comboVariant || item.comboVariantId || null,
               quantity: Number(item.quantity),
               price: Number(item.price),
               size: item.size || null,
+              colorName: item.colorName || null,
+              image: item.image || null,
             })),
           },
         },
         include: {
-          items: { include: { product: true, comboProduct: true } },
+          items: { include: { product: true, variant: true, comboProduct: true, comboVariant: true } },
           user: { select: { id: true, name: true, email: true } },
         },
       });
@@ -100,11 +192,15 @@ exports.createOrder = asyncHandler(async (req, res) => {
       }
 
       for (const item of orderItems) {
-        if (item.product || item.productId) {
+        if (item.variant || item.variantId) {
+          await decrementVariantSizeStock(tx, item.variant || item.variantId, item.size, Number(item.quantity));
+        } else if (item.product || item.productId) {
           await tx.product.update({
             where: { id: item.product || item.productId },
             data: { stock: { decrement: Number(item.quantity) } },
           });
+        } else if (item.comboVariant || item.comboVariantId) {
+          await decrementComboVariantSizeStock(tx, item.comboVariant || item.comboVariantId, item.size, Number(item.quantity));
         } else if (item.comboProduct || item.comboProductId) {
           await tx.comboProduct.update({
             where: { id: item.comboProduct || item.comboProductId },
@@ -130,7 +226,7 @@ exports.getOrderById = asyncHandler(async (req, res) => {
   const order = await prisma.order.findUnique({
     where: { id: req.params.id },
     include: {
-      items: { include: { product: true, comboProduct: true } },
+      items: { include: { product: true, variant: true, comboProduct: true, comboVariant: true } },
       user: { select: { id: true, name: true, email: true } },
     },
   });
@@ -180,7 +276,7 @@ exports.updateOrderPayment = asyncHandler(async (req, res) => {
       status: status || order.status,
     },
     include: {
-      items: { include: { product: true, comboProduct: true } },
+      items: { include: { product: true, variant: true, comboProduct: true, comboVariant: true } },
       user: { select: { id: true, name: true, email: true } },
     },
   });
@@ -191,7 +287,7 @@ exports.updateOrderPayment = asyncHandler(async (req, res) => {
 exports.getUserOrders = asyncHandler(async (req, res) => {
   const orders = await prisma.order.findMany({
     where: { userId: req.user.id },
-    include: { items: { include: { product: true, comboProduct: true } } },
+    include: { items: { include: { product: true, variant: true, comboProduct: true, comboVariant: true } } },
     orderBy: { createdAt: 'desc' },
   });
   res.json(orders);
@@ -200,7 +296,7 @@ exports.getUserOrders = asyncHandler(async (req, res) => {
 exports.getOrders = asyncHandler(async (req, res) => {
   const orders = await prisma.order.findMany({
     include: {
-      items: { include: { product: true, comboProduct: true } },
+      items: { include: { product: true, variant: true, comboProduct: true, comboVariant: true } },
       user: { select: { id: true, name: true, email: true } },
     },
     orderBy: { createdAt: 'desc' },

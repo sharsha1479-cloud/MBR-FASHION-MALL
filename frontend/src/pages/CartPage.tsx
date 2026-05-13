@@ -6,6 +6,18 @@ import { getComboImageUrl } from '../services/combo';
 import { useAuth } from '../context/AuthContext';
 import { ProductPrice, getEffectivePrice } from '../utils/pricing';
 
+const getSizeStock = (variant: any, size?: string) => {
+  if (!variant || !size) return Number.POSITIVE_INFINITY;
+  const rows = Array.isArray(variant.sizeStocks) && variant.sizeStocks.length > 0
+    ? variant.sizeStocks
+    : (variant.sizes || []).map((sizeOption: string, index: number) => ({
+        size: sizeOption,
+        stock: Number(variant.stock || 0),
+      }));
+  const row = rows.find((item: any) => item.size === size);
+  return row ? Number(row.stock || 0) : Number.POSITIVE_INFINITY;
+};
+
 const CartPage = () => {
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,11 +52,14 @@ const CartPage = () => {
 
   const total = useMemo(() => items.reduce((sum, item) => {
     const product = item.product || item.comboProduct;
-    return sum + getEffectivePrice(product) * item.quantity;
+    const price = item.comboProduct ? Number(item.price ?? item.comboVariant?.offerPrice ?? getEffectivePrice(product)) : Number(item.price ?? item.variant?.offerPrice ?? item.variant?.price ?? getEffectivePrice(product));
+    return sum + price * item.quantity;
   }, 0), [items]);
 
   const updateQuantity = async (id: string, quantity: number) => {
-    await updateCartItem(id, quantity);
+    const item = items.find((cartItem) => cartItem.id === id);
+    const maxStock = getSizeStock(item?.comboVariant || item?.variant, item?.size);
+    await updateCartItem(id, Math.min(quantity, maxStock));
     await loadCart();
   };
 
@@ -70,7 +85,9 @@ const CartPage = () => {
           <div className="mt-4 sm:mt-6 space-y-3 sm:space-y-4">
             {items.map((item) => {
               const product = item.product || item.comboProduct;
-              const imageUrl = item.comboProduct ? getComboImageUrl(product.image) : getProductImageUrl(product.images);
+              const variantProduct = item.comboProduct ? (item.comboVariant || product) : (item.variant || product);
+              const maxStock = getSizeStock(item.comboVariant || item.variant, item.size);
+              const imageUrl = item.comboProduct ? getComboImageUrl(item.image || item.comboVariant?.images?.[0] || product.image) : getProductImageUrl(item.image || item.variant?.images || product.images);
               return (
                 <div key={item.id} className="flex flex-col gap-3 sm:gap-4 rounded-2xl sm:rounded-3xl border border-slate-200 bg-slate-50 p-3 sm:p-4 md:flex-row md:items-center md:justify-between">
                   <div className="flex items-center gap-3 sm:gap-4 min-w-0">
@@ -78,19 +95,22 @@ const CartPage = () => {
                     <div className="min-w-0">
                       <p className="font-semibold text-slate-900 text-sm sm:text-base truncate">{product.name}</p>
                       <p className="text-xs sm:text-sm text-slate-500">{item.comboProduct ? 'Combo offer' : product.category}</p>
+                      {item.colorName && <p className="text-xs sm:text-sm text-slate-500">Color: {item.colorName}</p>}
                       {item.size && <p className="text-xs sm:text-sm text-slate-500">Size: {item.size}</p>}
+                      {Number.isFinite(maxStock) && <p className="text-xs sm:text-sm text-slate-500">Available: {maxStock}</p>}
                     </div>
                   </div>
                   <div className="flex items-center gap-2 sm:gap-3">
                     <input
                       type="number"
                       min={1}
+                      max={Number.isFinite(maxStock) ? Math.max(maxStock, 1) : undefined}
                       value={item.quantity}
                       onChange={(event) => updateQuantity(item.id, Number(event.target.value))}
                       className="w-16 sm:w-20 rounded-xl border border-slate-300 bg-white p-2 text-center text-sm"
                     />
                     <div className="w-24 sm:w-32">
-                      <ProductPrice product={product} quantity={item.quantity} size="sm" align="right" />
+                      <ProductPrice product={{ ...variantProduct, offerPrice: item.price ?? variantProduct.offerPrice }} quantity={item.quantity} size="sm" align="right" />
                     </div>
                     <button onClick={() => removeItem(item.id)} className="text-xs sm:text-sm text-maroon hover:text-maroon/80 font-semibold whitespace-nowrap">Remove</button>
                   </div>

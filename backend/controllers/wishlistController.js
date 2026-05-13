@@ -75,7 +75,7 @@ exports.getWishlist = asyncHandler(async (req, res) => {
   if (hasWishlistClient) {
     const items = await prisma.wishlistItem.findMany({
       where: { wishlistId: wishlist.id },
-      include: { product: true },
+      include: { product: { include: { variants: true } }, variant: true },
       orderBy: { id: 'asc' },
     });
     res.json({ id: wishlist.id, items });
@@ -104,29 +104,34 @@ exports.getWishlist = asyncHandler(async (req, res) => {
 });
 
 exports.addToWishlist = asyncHandler(async (req, res) => {
-  const { productId } = req.body;
+  const { productId, variantId } = req.body;
   if (!productId) {
     res.status(400);
     throw new Error('Product ID is required');
   }
 
-  const product = await prisma.product.findUnique({ where: { id: productId } });
+  const product = await prisma.product.findUnique({
+    where: { id: productId },
+    include: { variants: { orderBy: { createdAt: 'asc' } } },
+  });
   if (!product) {
     res.status(404);
     throw new Error('Product not found');
   }
 
   const wishlist = await getOrCreateWishlist(req.user.id);
+  const selectedVariant = variantId
+    ? product.variants.find((variant) => variant.id === variantId)
+    : product.variants[0];
 
   if (hasWishlistClient) {
-    let item = await prisma.wishlistItem.findUnique({
+    let item = await prisma.wishlistItem.findFirst({
       where: {
-        wishlistId_productId: {
-          wishlistId: wishlist.id,
-          productId,
-        },
+        wishlistId: wishlist.id,
+        productId,
+        variantId: selectedVariant?.id || null,
       },
-      include: { product: true },
+      include: { product: { include: { variants: true } }, variant: true },
     });
 
     if (!item) {
@@ -134,8 +139,9 @@ exports.addToWishlist = asyncHandler(async (req, res) => {
         data: {
           wishlistId: wishlist.id,
           productId,
+          variantId: selectedVariant?.id || null,
         },
-        include: { product: true },
+        include: { product: { include: { variants: true } }, variant: true },
       });
     }
 

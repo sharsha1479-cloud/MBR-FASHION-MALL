@@ -9,8 +9,8 @@ export const fetchWishlist = async () => {
   return response.data;
 };
 
-export const addWishlistItem = async (productId: string) => {
-  const response = await api.post('/wishlist', { productId });
+export const addWishlistItem = async (productId: string, variantId?: string) => {
+  const response = await api.post('/wishlist', { productId, variantId });
   notifyWishlistChanged();
   return response.data;
 };

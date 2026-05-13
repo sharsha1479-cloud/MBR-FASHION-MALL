@@ -28,7 +28,7 @@ const shortOrderId = (id: string) => `#${id.slice(-8).toUpperCase()}`;
 const getItemProduct = (item: any) => item.product || item.comboProduct || {};
 
 const getItemImage = (item: any) => (
-  item.comboProduct ? getComboImageUrl(item.comboProduct.image) : getProductImageUrl(item.product?.images)
+  item.comboProduct ? getComboImageUrl(item.comboProduct.image) : getProductImageUrl(item.image || item.variant?.images || item.product?.images)
 );
 
 const getItemLink = (item: any) => {
@@ -168,6 +168,7 @@ const OrdersPage = () => {
                                 <div className="mt-2 flex flex-wrap gap-1.5">
                                   <span className="rounded-full bg-cream px-2.5 py-1 text-[11px] font-bold text-maroon">{isCombo ? 'Combo offer' : product.category || 'Product'}</span>
                                   <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600">Qty {quantity}</span>
+                                  {item.colorName && <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600">Color {item.colorName}</span>}
                                   {item.size && <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600">Size {item.size}</span>}
                                 </div>
                               </div>

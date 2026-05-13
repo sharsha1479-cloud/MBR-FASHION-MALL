@@ -20,6 +20,36 @@ type AdminNotification = {
   read: boolean;
 };
 
+type ComboVariantForm = {
+  id?: string;
+  colorName: string;
+  colorCode: string;
+  mrp: number | '';
+  offerPrice: number | '';
+  sizeStocks: { size: string; stock: number | '' }[];
+  existingImages: string[];
+  images: File[];
+  previews: { file: File; url: string }[];
+};
+
+const parseNumberInput = (value: string) => (value === '' ? '' : Number(value));
+const toNumber = (value: number | '') => (value === '' ? 0 : Number(value));
+
+const createEmptyComboVariant = (): ComboVariantForm => ({
+  colorName: 'Default',
+  colorCode: '#94a3b8',
+  mrp: 0,
+  offerPrice: 0,
+  sizeStocks: [
+    { size: 'S', stock: 0 },
+    { size: 'M', stock: 0 },
+    { size: 'L', stock: 0 },
+  ],
+  existingImages: [],
+  images: [],
+  previews: [],
+});
+
 const sections: Array<{ group: string; items: Array<{ key: AdminSection; label: string }> }> = [
   { group: 'Overview', items: [{ key: 'dashboard', label: 'Dashboard' }, { key: 'notifications', label: 'Notifications' }] },
   { group: 'Management', items: [{ key: 'orders', label: 'Orders' }, { key: 'storeInventory', label: 'Store Inventory' }, { key: 'users', label: 'Users' }] },
@@ -36,6 +66,8 @@ const AdminDashboard = () => {
   const [users, setUsers] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [search, setSearch] = useState('');
+  const [productSearch, setProductSearch] = useState('');
+  const [productPage, setProductPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [newOrderNotice, setNewOrderNotice] = useState('');
@@ -81,13 +113,9 @@ const AdminDashboard = () => {
   const [comboForm, setComboForm] = useState({
     name: '',
     description: '',
-    mrp: '',
-    offerPrice: '',
-    stock: '',
-    sizes: 'S,M,L',
     isActive: true,
   });
-  const [comboImage, setComboImage] = useState<File | null>(null);
+  const [comboVariants, setComboVariants] = useState<ComboVariantForm[]>([createEmptyComboVariant()]);
   const [couponMessage, setCouponMessage] = useState('');
   const [editingCoupon, setEditingCoupon] = useState<any | null>(null);
   const [couponForm, setCouponForm] = useState({
@@ -250,6 +278,10 @@ const AdminDashboard = () => {
   }, [newOrderNotice]);
 
   useEffect(() => {
+    setProductPage(1);
+  }, [productSearch, products.length]);
+
+  useEffect(() => {
     return () => {
       imagePreviews.forEach(({ url }) => URL.revokeObjectURL(url));
     };
@@ -269,14 +301,31 @@ const AdminDashboard = () => {
 
   const filteredProducts = useMemo(
     () => products.filter((product) =>
-      [product.name, product.category].join(' ').toLowerCase().includes(search.toLowerCase())
+      [
+        product.name,
+        product.category,
+        product.mrp,
+        product.offerPrice,
+        product.price,
+        product.stock,
+        product.isTrending ? 'trending' : 'not trending',
+      ].join(' ').toLowerCase().includes(productSearch.toLowerCase())
     ),
-    [products, search]
+    [products, productSearch]
+  );
+  const productPageSize = 10;
+  const productPageCount = Math.max(1, Math.ceil(filteredProducts.length / productPageSize));
+  const currentProductPage = Math.min(productPage, productPageCount);
+  const paginatedProducts = useMemo(
+    () => filteredProducts.slice((currentProductPage - 1) * productPageSize, currentProductPage * productPageSize),
+    [currentProductPage, filteredProducts]
   );
 
   const filteredTrendingProducts = useMemo(
-    () => filteredProducts,
-    [filteredProducts]
+    () => products.filter((product) =>
+      [product.name, product.category].join(' ').toLowerCase().includes(search.toLowerCase())
+    ),
+    [products, search]
   );
 
   const filteredUsers = useMemo(
@@ -632,47 +681,123 @@ const AdminDashboard = () => {
 
   const resetComboForm = () => {
     setEditingCombo(null);
+    comboVariants.forEach((variant) => variant.previews.forEach(({ url }) => URL.revokeObjectURL(url)));
     setComboForm({
       name: '',
       description: '',
-      mrp: '',
-      offerPrice: '',
-      stock: '',
-      sizes: 'S,M,L',
       isActive: true,
     });
-    setComboImage(null);
+    setComboVariants([createEmptyComboVariant()]);
   };
 
   const handleEditCombo = (combo: any) => {
     setComboMessage('');
     setEditingCombo(combo);
+    comboVariants.forEach((variant) => variant.previews.forEach(({ url }) => URL.revokeObjectURL(url)));
     setComboForm({
       name: combo.name || '',
       description: combo.description || '',
-      mrp: combo.mrp !== null && combo.mrp !== undefined ? String(combo.mrp) : '',
-      offerPrice: combo.offerPrice !== null && combo.offerPrice !== undefined ? String(combo.offerPrice) : '',
-      stock: combo.stock !== null && combo.stock !== undefined ? String(combo.stock) : '',
-      sizes: Array.isArray(combo.sizes) && combo.sizes.length > 0 ? combo.sizes.join(',') : 'S,M,L',
       isActive: Boolean(combo.isActive),
     });
-    setComboImage(null);
+    setComboVariants((combo.variants?.length ? combo.variants : [combo]).map((variant: any) => ({
+      id: variant.id,
+      colorName: variant.colorName || 'Default',
+      colorCode: variant.colorCode || '#94a3b8',
+      mrp: Number(variant.mrp ?? combo.mrp ?? 0),
+      offerPrice: Number(variant.offerPrice ?? combo.offerPrice ?? 0),
+      sizeStocks: (variant.sizeStocks?.length
+        ? variant.sizeStocks
+        : (variant.sizes || combo.sizes || []).map((sizeOption: string) => ({
+            size: sizeOption,
+            stock: Number(variant.stock ?? combo.stock ?? 0),
+          }))).map((item: any) => ({
+            size: String(item.size || ''),
+            stock: Number(item.stock || 0),
+          })),
+      existingImages: Array.isArray(variant.images) && variant.images.length > 0 ? variant.images : (combo.image ? [combo.image] : []),
+      images: [],
+      previews: [],
+    })));
+  };
+
+  const updateComboVariant = (index: number, updates: Partial<ComboVariantForm>) => {
+    setComboVariants((current) => current.map((variant, variantIndex) => (
+      variantIndex === index ? { ...variant, ...updates } : variant
+    )));
+  };
+
+  const updateComboVariantSize = (variantIndex: number, sizeIndex: number, updates: Partial<{ size: string; stock: number | '' }>) => {
+    setComboVariants((current) => current.map((variant, index) => (
+      index === variantIndex
+        ? {
+            ...variant,
+            sizeStocks: variant.sizeStocks.map((sizeRow, rowIndex) => (
+              rowIndex === sizeIndex ? { ...sizeRow, ...updates } : sizeRow
+            )),
+          }
+        : variant
+    )));
+  };
+
+  const addComboVariant = () => {
+    setComboVariants((current) => [...current, { ...createEmptyComboVariant(), colorName: `Color ${current.length + 1}` }]);
+  };
+
+  const removeComboVariant = (index: number) => {
+    if (comboVariants.length === 1) {
+      setComboMessage('A combo must have at least one variant.');
+      return;
+    }
+    setComboVariants((current) => {
+      current[index].previews.forEach(({ url }) => URL.revokeObjectURL(url));
+      return current.filter((_, variantIndex) => variantIndex !== index);
+    });
+  };
+
+  const addComboVariantSize = (variantIndex: number) => {
+    setComboVariants((current) => current.map((variant, index) => (
+      index === variantIndex ? { ...variant, sizeStocks: [...variant.sizeStocks, { size: '', stock: 0 }] } : variant
+    )));
+  };
+
+  const removeComboVariantSize = (variantIndex: number, sizeIndex: number) => {
+    setComboVariants((current) => current.map((variant, index) => (
+      index === variantIndex ? { ...variant, sizeStocks: variant.sizeStocks.filter((_, rowIndex) => rowIndex !== sizeIndex) } : variant
+    )));
   };
 
   const handleSubmitCombo = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setComboMessage('');
 
-    if (!editingCombo && !comboImage) {
-      setComboMessage('Combo image is required.');
+    const missingImages = comboVariants.some((variant) => variant.existingImages.length + variant.images.length === 0);
+    if (missingImages) {
+      setComboMessage('Each combo variant needs at least one image.');
+      return;
+    }
+
+    const missingSizes = comboVariants.some((variant) => variant.sizeStocks.length === 0 || variant.sizeStocks.some((item) => !item.size.trim()));
+    if (missingSizes) {
+      setComboMessage('Each combo variant needs at least one size with a size name.');
       return;
     }
 
     const formData = new FormData();
     Object.entries(comboForm).forEach(([key, value]) => formData.append(key, String(value)));
-    if (comboImage) {
-      formData.append('image', comboImage);
-    }
+    formData.append('variants', JSON.stringify(comboVariants.map((variant) => ({
+      id: variant.id,
+      colorName: variant.colorName,
+      colorCode: variant.colorCode,
+      mrp: toNumber(variant.mrp),
+      offerPrice: toNumber(variant.offerPrice),
+      stock: variant.sizeStocks.reduce((sum, item) => sum + toNumber(item.stock), 0),
+      sizes: variant.sizeStocks.map((item) => item.size).join(','),
+      sizeStocks: variant.sizeStocks.map((item) => ({ ...item, stock: toNumber(item.stock) })),
+      existingImages: variant.existingImages,
+    }))));
+    comboVariants.forEach((variant, index) => {
+      variant.images.slice(0, 4).forEach((file) => formData.append(`comboVariantImages_${index}`, file));
+    });
 
     try {
       if (editingCombo) {
@@ -1440,44 +1565,81 @@ const AdminDashboard = () => {
               )}
 
               {activeSection === 'products' && (
-                <AdminTable
-                  headers={['Name', 'Category', 'MRP', 'Offer Price', 'Stock', 'Trending', 'Status', 'Actions']}
-                  rows={filteredProducts.map((product) => [
-                    product.name,
-                    product.category,
-                    `Rs. ${Number(product.mrp ?? product.price).toFixed(2)}`,
-                    `Rs. ${Number(product.offerPrice ?? product.price).toFixed(2)}`,
-                    product.stock,
-                    <TrendingSelect
-                      value={!!product.isTrending}
-                      onChange={(value) => handleTrendingChange(product.id, value)}
-                    />,
-                    'Active',
+                <div className="space-y-3">
+                  <AdminTable
+                    headers={['Name', 'Category', 'MRP', 'Offer Price', 'Stock', 'Trending', 'Status', 'Actions']}
+                    headerAction={(
+                      <input
+                        value={productSearch}
+                        onChange={(event) => setProductSearch(event.target.value)}
+                        placeholder="Search products"
+                        className="w-full rounded-3xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 shadow-sm focus:border-maroon focus:outline-none focus:ring-2 focus:ring-maroon/20 sm:w-72"
+                      />
+                    )}
+                    rows={paginatedProducts.map((product) => [
+                      product.name,
+                      product.category,
+                      `Rs. ${Number(product.mrp ?? product.price).toFixed(2)}`,
+                      `Rs. ${Number(product.offerPrice ?? product.price).toFixed(2)}`,
+                      product.stock,
+                      <TrendingSelect
+                        value={!!product.isTrending}
+                        onChange={(value) => handleTrendingChange(product.id, value)}
+                      />,
+                      'Active',
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setViewingProductImage({ imageUrl: getProductImageUrl(product.images), productName: product.name })}
+                          className="rounded-full border border-blue-500 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 transition hover:bg-blue-100"
+                        >
+                          View
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => navigate(`/admin/product/${product.id}`)}
+                          className="rounded-full border border-maroon bg-maroon/10 px-3 py-1 text-xs font-semibold text-maroon transition hover:bg-maroon/10"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(product.id)}
+                          className="rounded-full border border-slate-300 bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 transition hover:bg-slate-200"
+                        >
+                          Delete
+                        </button>
+                      </div>,
+                    ])}
+                  />
+                  <div className="flex flex-col gap-3 rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+                    <span>
+                      Showing {filteredProducts.length === 0 ? 0 : (currentProductPage - 1) * productPageSize + 1}
+                      -{Math.min(currentProductPage * productPageSize, filteredProducts.length)} of {filteredProducts.length} products
+                    </span>
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
-                          onClick={() => setViewingProductImage({ imageUrl: getProductImageUrl(product.images), productName: product.name })}
-                        className="rounded-full border border-blue-500 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 transition hover:bg-blue-100"
+                        onClick={() => setProductPage((page) => Math.max(1, page - 1))}
+                        disabled={currentProductPage === 1}
+                        className="rounded-full border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
                       >
-                        View
+                        Previous
                       </button>
+                      <span className="rounded-full bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-700">
+                        Page {currentProductPage} of {productPageCount}
+                      </span>
                       <button
                         type="button"
-                        onClick={() => navigate(`/admin/product/${product.id}`)}
-                        className="rounded-full border border-maroon bg-maroon/10 px-3 py-1 text-xs font-semibold text-maroon transition hover:bg-maroon/10"
+                        onClick={() => setProductPage((page) => Math.min(productPageCount, page + 1))}
+                        disabled={currentProductPage === productPageCount}
+                        className="rounded-full border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
                       >
-                        Edit
+                        Next
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(product.id)}
-                        className="rounded-full border border-slate-300 bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 transition hover:bg-slate-200"
-                      >
-                        Delete
-                      </button>
-                    </div>,
-                  ])}
-                />
+                    </div>
+                  </div>
+                </div>
               )}
 
               {activeSection === 'trending' && (
@@ -1651,73 +1813,138 @@ const AdminDashboard = () => {
                         {comboMessage}
                       </p>
                     )}
-                    <form onSubmit={handleSubmitCombo} className="grid gap-4 md:grid-cols-3">
-                      <input
-                        value={comboForm.name}
-                        onChange={(event) => setComboForm({ ...comboForm, name: event.target.value })}
-                        required
-                        placeholder="Combo name"
-                        className="rounded-3xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm"
-                      />
-                      <input
-                        value={comboForm.mrp}
-                        onChange={(event) => setComboForm({ ...comboForm, mrp: event.target.value })}
-                        type="number"
-                        min={0}
-                        placeholder="MRP"
-                        className="rounded-3xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm"
-                      />
-                      <input
-                        value={comboForm.offerPrice}
-                        onChange={(event) => setComboForm({ ...comboForm, offerPrice: event.target.value })}
-                        required
-                        type="number"
-                        min={0}
-                        placeholder="Offer price"
-                        className="rounded-3xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm"
-                      />
-                      <input
-                        value={comboForm.stock}
-                        onChange={(event) => setComboForm({ ...comboForm, stock: event.target.value })}
-                        required
-                        type="number"
-                        min={0}
-                        placeholder="Stock"
-                        className="rounded-3xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm"
-                      />
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(event) => setComboImage(event.target.files?.[0] || null)}
-                        required={!editingCombo}
-                        className="rounded-3xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm"
-                      />
-                      <input
-                        value={comboForm.sizes}
-                        onChange={(event) => setComboForm({ ...comboForm, sizes: event.target.value })}
-                        required
-                        placeholder="Sizes"
-                        className="rounded-3xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm"
-                      />
-                      <label className="flex items-center gap-3 rounded-3xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm">
+                    <form onSubmit={handleSubmitCombo} className="space-y-4">
+                      <div className="grid gap-4 md:grid-cols-2">
                         <input
-                          type="checkbox"
-                          checked={comboForm.isActive}
-                          onChange={(event) => setComboForm({ ...comboForm, isActive: event.target.checked })}
-                          className="h-5 w-5 rounded border-slate-300 text-maroon focus:ring-maroon/20"
+                          value={comboForm.name}
+                          onChange={(event) => setComboForm({ ...comboForm, name: event.target.value })}
+                          required
+                          placeholder="Combo name"
+                          className="rounded-3xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm"
                         />
-                        Active on homepage
+                        <label className="flex items-center gap-3 rounded-3xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm">
+                          <input
+                            type="checkbox"
+                            checked={comboForm.isActive}
+                            onChange={(event) => setComboForm({ ...comboForm, isActive: event.target.checked })}
+                            className="h-5 w-5 rounded border-slate-300 text-maroon focus:ring-maroon/20"
+                          />
+                          Active on homepage
+                        </label>
+                      </div>
+                      <label className="flex items-center gap-3 rounded-3xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm">
+                        <textarea
+                          value={comboForm.description}
+                          onChange={(event) => setComboForm({ ...comboForm, description: event.target.value })}
+                          placeholder="Combo description"
+                          rows={3}
+                          className="w-full border-0 bg-transparent p-0 text-sm text-slate-900 shadow-none focus:ring-0"
+                        />
                       </label>
-                      <textarea
-                        value={comboForm.description}
-                        onChange={(event) => setComboForm({ ...comboForm, description: event.target.value })}
-                        placeholder="Combo description"
-                        rows={3}
-                        className="col-span-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm"
-                      />
+                      <div className="flex items-center justify-between gap-3">
+                        <h4 className="text-base font-semibold text-slate-900">Combo variants</h4>
+                        <button type="button" onClick={addComboVariant} className="rounded-full border border-maroon bg-white px-4 py-2 text-xs font-semibold text-maroon hover:bg-maroon/10">
+                          Add variant
+                        </button>
+                      </div>
+                      <div className="space-y-4">
+                        {comboVariants.map((variant, index) => (
+                          <div key={variant.id || index} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                            <div className="mb-4 flex items-center justify-between gap-3">
+                              <div className="flex items-center gap-2">
+                                <span className="h-6 w-6 rounded-full border border-slate-300" style={{ backgroundColor: variant.colorCode }} />
+                                <p className="font-semibold text-slate-900">Variant {index + 1}</p>
+                              </div>
+                              <button type="button" onClick={() => removeComboVariant(index)} className="rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-700">
+                                Remove
+                              </button>
+                            </div>
+                            <div className="grid gap-4 md:grid-cols-2">
+                              <input value={variant.colorName} onChange={(event) => updateComboVariant(index, { colorName: event.target.value })} required placeholder="Color name" className="rounded-3xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm" />
+                              <div className="flex gap-2">
+                                <input type="color" value={variant.colorCode} onChange={(event) => updateComboVariant(index, { colorCode: event.target.value })} className="h-12 w-14 rounded-lg border border-slate-300 bg-white p-1" />
+                                <input value={variant.colorCode} onChange={(event) => updateComboVariant(index, { colorCode: event.target.value })} className="w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm" />
+                              </div>
+                              <input type="number" min={0} value={variant.mrp} onChange={(event) => updateComboVariant(index, { mrp: parseNumberInput(event.target.value) })} required placeholder="MRP" className="rounded-3xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm" />
+                              <input type="number" min={0} value={variant.offerPrice} onChange={(event) => updateComboVariant(index, { offerPrice: parseNumberInput(event.target.value) })} required placeholder="Offer price" className="rounded-3xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm" />
+                              <div className="md:col-span-2 rounded-2xl border border-slate-200 bg-white p-4">
+                                <div className="flex items-center justify-between gap-3">
+                                  <div>
+                                    <p className="text-sm font-semibold text-slate-700">Sizes and stock</p>
+                                    <p className="mt-1 text-xs text-slate-500">Total stock: {variant.sizeStocks.reduce((sum, item) => sum + toNumber(item.stock), 0)}</p>
+                                  </div>
+                                  <button type="button" onClick={() => addComboVariantSize(index)} className="rounded-full border border-maroon px-3 py-2 text-xs font-semibold text-maroon">
+                                    Add size
+                                  </button>
+                                </div>
+                                <div className="mt-3 space-y-2">
+                                  {variant.sizeStocks.map((sizeRow, sizeIndex) => (
+                                    <div key={sizeIndex} className="grid grid-cols-[minmax(0,1fr)_120px_auto] gap-2">
+                                      <input value={sizeRow.size} onChange={(event) => updateComboVariantSize(index, sizeIndex, { size: event.target.value })} required placeholder="Size" className="w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm" />
+                                      <input type="number" min={0} value={sizeRow.stock} onChange={(event) => updateComboVariantSize(index, sizeIndex, { stock: parseNumberInput(event.target.value) })} required className="w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm" />
+                                      <button type="button" onClick={() => removeComboVariantSize(index, sizeIndex)} className="rounded-full bg-red-100 px-3 py-2 text-xs font-semibold text-red-700">
+                                        Delete
+                                      </button>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                              <div className="md:col-span-2">
+                                <label className="block text-sm font-semibold text-slate-700">Variant images</label>
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  multiple
+                                  onChange={(event) => {
+                                    const files = event.target.files;
+                                    if (!files) return;
+                                    const newFiles = Array.from(files);
+                                    const total = variant.existingImages.length + variant.images.length + newFiles.length;
+                                    if (total > 4) {
+                                      setComboMessage('Please select no more than 4 images per variant.');
+                                      return;
+                                    }
+                                    updateComboVariant(index, {
+                                      images: [...variant.images, ...newFiles],
+                                      previews: [...variant.previews, ...newFiles.map((file) => ({ file, url: URL.createObjectURL(file) }))],
+                                    });
+                                  }}
+                                  className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm"
+                                />
+                                {(variant.previews.length > 0 || variant.existingImages.length > 0) && (
+                                  <div className="mt-3 grid gap-2 sm:grid-cols-4">
+                                    {variant.previews.map(({ file, url }) => (
+                                      <div key={file.name + file.size} className="relative overflow-hidden rounded-2xl border border-slate-200">
+                                        <img src={url} alt={file.name} className="h-20 w-full object-cover" />
+                                        <button type="button" onClick={() => {
+                                          URL.revokeObjectURL(url);
+                                          updateComboVariant(index, {
+                                            images: variant.images.filter((item) => item !== file),
+                                            previews: variant.previews.filter((item) => item.file !== file),
+                                          });
+                                        }} className="absolute right-1 top-1 rounded-full bg-white/90 p-1 text-xs text-slate-900 shadow">
+                                          x
+                                        </button>
+                                      </div>
+                                    ))}
+                                    {variant.existingImages.map((imageUrl) => (
+                                      <div key={imageUrl} className="relative overflow-hidden rounded-2xl border border-slate-200">
+                                        <img src={getComboImageUrl(imageUrl)} alt="Existing combo" className="h-20 w-full object-cover" />
+                                        <button type="button" onClick={() => updateComboVariant(index, { existingImages: variant.existingImages.filter((item) => item !== imageUrl) })} className="absolute right-1 top-1 rounded-full bg-white/90 p-1 text-xs text-slate-900 shadow">
+                                          x
+                                        </button>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                       <button
                         type="submit"
-                        className="col-span-full rounded-3xl bg-maroon px-6 py-3 text-sm font-semibold text-white shadow hover:bg-maroon/90"
+                        className="w-full rounded-3xl bg-maroon px-6 py-3 text-sm font-semibold text-white shadow hover:bg-maroon/90"
                       >
                         {editingCombo ? 'Update combo' : 'Save combo'}
                       </button>
@@ -1983,7 +2210,8 @@ const AdminDashboard = () => {
                     `${order.user?.name || 'Unknown'} (${order.user?.email || 'unknown'})`,
                     order.items?.map((item: any) => {
                       const product = item.product || item.comboProduct;
-                      return `${product?.name || 'Item'}${item.size ? ` (${item.size})` : ''} x${item.quantity}`;
+                      const variantText = [item.colorName, item.size].filter(Boolean).join(', ');
+                      return `${product?.name || 'Item'}${variantText ? ` (${variantText})` : ''} x${item.quantity}`;
                     }).join(', '),
                     `Rs. ${Number(order.totalAmount).toFixed(2)}`,
                     order.paymentStatus || 'pending',
@@ -2026,9 +2254,12 @@ const AdminDashboard = () => {
   );
 };
 
-const AdminTable = ({ headers, rows }: { headers: string[]; rows: Array<Array<string | number | ReactNode>> }) => (
+const AdminTable = ({ headers, rows, headerAction }: { headers: string[]; rows: Array<Array<string | number | ReactNode>>; headerAction?: ReactNode }) => (
   <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-    <div className="border-b border-slate-200 bg-slate-50 px-6 py-4 text-sm font-semibold text-slate-700">Records</div>
+    <div className="flex flex-col gap-3 border-b border-slate-200 bg-slate-50 px-6 py-4 text-sm font-semibold text-slate-700 sm:flex-row sm:items-center sm:justify-between">
+      <span>Records</span>
+      {headerAction}
+    </div>
     <div className="overflow-x-auto">
       <table className="min-w-full border-collapse text-sm">
         <thead>
