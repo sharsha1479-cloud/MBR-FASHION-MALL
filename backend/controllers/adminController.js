@@ -3,7 +3,7 @@ const prisma = require('../utils/prisma');
 
 exports.getUsers = asyncHandler(async (req, res) => {
   const users = await prisma.user.findMany({
-    select: {
+    select:{
       id: true,
       name: true,
       email: true,
