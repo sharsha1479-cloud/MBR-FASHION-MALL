@@ -37,17 +37,11 @@ const SplashScreen = ({ onComplete }: SplashScreenProps) => {
               }}
               className="mb-6"
             >
-              <picture>
-                <source srcSet="/mbrlogo.webp" type="image/webp" />
-                <img
-                  src="/mbrlogo.png"
-                  alt="MBR The Fashion Hub"
-                  width="320"
-                  height="320"
-                  decoding="async"
-                  className="mx-auto h-auto w-56 object-contain sm:w-72 md:w-80"
-                />
-              </picture>
+              <img
+                src="/mbrlogo.png"
+                alt="MBR The Fashion Hub"
+                className="mx-auto h-auto w-56 object-contain sm:w-72 md:w-80"
+              />
             </motion.div>
 
             <motion.p

@@ -5,8 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host",
-    "seo:sitemap": "node scripts/generate-sitemap.mjs",
-    "build": "npm run seo:sitemap && tsc && vite build",
+    "build": "tsc && vite build",
     "preview": "vite preview"
   },
   "dependencies": {

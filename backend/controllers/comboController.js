@@ -1,6 +1,5 @@
 const asyncHandler = require('express-async-handler');
 const prisma = require('../utils/prisma');
-const cache = require('../utils/cache');
 
 const getUploadedFilenames = (files) => {
   if (!files) return [];
@@ -175,44 +174,16 @@ const syncComboDefaults = (variant) => ({
 
 exports.getCombos = asyncHandler(async (req, res) => {
   const includeInactive = req.query.all === 'true';
-  const pageNumber = Math.max(1, parseInt(req.query.page, 10) || 1);
-  const pageSize = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 0));
-  const usePagination = req.query.page !== undefined || req.query.limit !== undefined;
 
   if (!prisma.comboProduct) return res.json([]);
 
   let combos = [];
   try {
-    const where = includeInactive ? {} : { isActive: true };
-    const [rows, total] = usePagination
-      ? await Promise.all([
-          prisma.comboProduct.findMany({
-            where,
-            include: { variants: { orderBy: { createdAt: 'asc' } } },
-            orderBy: { createdAt: 'desc' },
-            skip: (pageNumber - 1) * (pageSize || 24),
-            take: pageSize || 24,
-          }),
-          prisma.comboProduct.count({ where }),
-        ])
-      : [await prisma.comboProduct.findMany({
+    combos = await prisma.comboProduct.findMany({
       where: includeInactive ? {} : { isActive: true },
       include: { variants: { orderBy: { createdAt: 'asc' } } },
       orderBy: { createdAt: 'desc' },
-    }), null];
-    combos = rows;
-    if (usePagination) {
-      res.json({
-        combos: combos.map(normalizeCombo),
-        pagination: {
-          page: pageNumber,
-          limit: pageSize || 24,
-          total,
-          totalPages: Math.max(1, Math.ceil(total / (pageSize || 24))),
-        },
-      });
-      return;
-    }
+    });
   } catch (error) {
     if (error.code === 'P2021' || error.code === 'P2022') return res.json([]);
     throw error;
@@ -279,7 +250,6 @@ exports.createCombo = asyncHandler(async (req, res) => {
     include: { variants: { orderBy: { createdAt: 'asc' } } },
   });
 
-  await cache.delByPrefix('combos:');
   res.status(201).json(normalizeCombo(combo));
 });
 
@@ -350,7 +320,6 @@ exports.updateCombo = asyncHandler(async (req, res) => {
     });
   });
 
-  await cache.delByPrefix('combos:');
   res.json(normalizeCombo(combo));
 });
 
@@ -364,6 +333,5 @@ exports.deleteCombo = asyncHandler(async (req, res) => {
   }
 
   await prisma.comboProduct.delete({ where: { id } });
-  await cache.delByPrefix('combos:');
   res.json({ message: 'Combo product deleted successfully.' });
 });

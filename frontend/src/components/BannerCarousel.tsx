@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState, type MouseEvent, type PointerEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { getBannerImageUrl } from '../services/banner';
-import LazyImage from './LazyImage';
 
 type Banner = {
   id: string;
@@ -77,14 +76,11 @@ const BannerCarousel = ({ banners }: { banners: Banner[] }) => {
 
   const content = (
     <div className="relative h-[150px] w-full overflow-hidden rounded-xl border border-primary/10 bg-slate-900 shadow-lg shadow-primary/10 sm:h-[260px] sm:rounded-2xl md:h-[360px] lg:h-[420px]">
-      <LazyImage
+      <img
         src={getBannerImageUrl(activeBanner.image)}
         alt="Homepage banner"
         className="h-full w-full object-cover"
-        width={1440}
-        height={420}
-        eager
-        sizes="100vw"
+        draggable={false}
       />
       <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-primary/10 sm:hidden" />
     </div>

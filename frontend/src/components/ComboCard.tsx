@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import LazyImage from './LazyImage';
 
 type ComboCardProps = {
   name: string;
@@ -22,7 +21,7 @@ const ComboCard = ({ name, description, mrp, offerPrice, image, stock, link }: C
       className="group h-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:shadow-lg sm:rounded-2xl"
     >
       <div className="aspect-[4/3] overflow-hidden bg-slate-100">
-        <LazyImage src={image} alt={name} width={640} height={480} sizes="(min-width: 1024px) 30vw, 45vw" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+        <img src={image} alt={name} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
       </div>
       <div className="p-2.5 sm:p-5">
         <p className="mb-1 text-[8px] font-bold uppercase tracking-[0.18em] text-maroon sm:mb-2 sm:text-[10px] sm:tracking-[0.26em]">Combo offer</p>

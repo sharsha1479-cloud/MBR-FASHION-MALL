@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 
 const Hero = () => (
   <section className="relative h-[34vh] min-h-[240px] overflow-hidden bg-primary text-secondary sm:flex sm:h-[50vh] sm:min-h-0 sm:items-center sm:justify-center md:h-screen">
-    <div className="absolute inset-0 bg-cover bg-center sm:bg-center" style={{ backgroundImage: "image-set(url('/images/site/hero-fashion-store.avif') type('image/avif'), url('/images/site/hero-fashion-store.webp') type('image/webp'), url('/images/site/hero-fashion-store.jpg') type('image/jpeg'))" }}></div>
+    <div className="absolute inset-0 bg-cover bg-center sm:bg-center" style={{ backgroundImage: "url('/images/site/hero-fashion-store.jpg')" }}></div>
     <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(11,18,32,0.1)_0%,rgba(11,18,32,0.52)_45%,rgba(11,18,32,0.92)_100%)] sm:bg-gradient-to-r sm:from-slate-950/80 sm:via-slate-950/55 sm:to-slate-950/35"></div>
     <div className="absolute inset-x-3 bottom-3 top-3 rounded-[1.1rem] ring-1 ring-white/20 sm:hidden"></div>
     <div className="relative z-10 flex h-full max-w-4xl flex-col justify-end px-5 pb-5 text-left sm:mx-auto sm:block sm:h-auto sm:px-6 sm:pb-0 sm:text-center">

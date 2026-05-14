@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ProductPrice } from '../utils/pricing';
-import LazyImage from './LazyImage';
 
 const PLACEHOLDER_IMAGE = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400"%3E%3Crect width="100%25" height="100%25" fill="%23f8fafc"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%2364748b" font-family="Arial,sans-serif" font-size="32"%3ENo Image%3C/text%3E%3C/svg%3E';
 
@@ -31,13 +30,10 @@ const ProductCard = ({ id, name, price, mrp, offerPrice, image, category, varian
   >
     <Link to={`/product/${id}`} aria-label={`View details for ${name}`} className="flex h-full flex-col">
       <div className={`relative aspect-square shrink-0 overflow-hidden ${featured ? 'bg-[#f4eadc]' : 'bg-accent'}`}>
-        <LazyImage
+        <img
           src={image || PLACEHOLDER_IMAGE}
           alt={name}
           className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
-          width={400}
-          height={400}
-          sizes="(min-width: 1280px) 18vw, (min-width: 768px) 25vw, 45vw"
         />
         {featured && (
           <span className="absolute left-2.5 top-2.5 rounded-full border border-white/70 bg-white/90 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.14em] text-maroon shadow-sm sm:left-4 sm:top-4 sm:text-[10px]">

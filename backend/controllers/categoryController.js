@@ -1,6 +1,5 @@
 const asyncHandler = require('express-async-handler');
 const prisma = require('../utils/prisma');
-const cache = require('../utils/cache');
 
 const defaultCategories = [
   {
@@ -99,7 +98,6 @@ exports.createCategory = asyncHandler(async (req, res) => {
     },
   });
 
-  await cache.delByPrefix('categories:');
   res.status(201).json(category);
 });
 
@@ -123,7 +121,6 @@ exports.updateCategory = asyncHandler(async (req, res) => {
     data: { image },
   });
 
-  await cache.delByPrefix('categories:');
   res.json(updatedCategory);
 });
 
@@ -137,7 +134,6 @@ exports.deleteCategory = asyncHandler(async (req, res) => {
   }
 
   await prisma.category.delete({ where: { id } });
-  await cache.delByPrefix('categories:');
 
   res.json({ message: 'Category deleted successfully.' });
 });

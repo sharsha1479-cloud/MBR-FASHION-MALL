@@ -47,10 +47,6 @@ model Product {
   orderItems     OrderItem[]
   wishlistItems  WishlistItem[]
   storeInventory StoreInventory[]
-
-  @@index([category])
-  @@index([isTrending, createdAt])
-  @@index([createdAt])
 }
 
 model ProductVariant {
@@ -83,8 +79,6 @@ model Category {
   image     String   @db.Text
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  @@index([label])
 }
 
 model Banner {
@@ -97,8 +91,6 @@ model Banner {
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  @@index([isActive, sortOrder])
 }
 
 model Coupon {
@@ -110,8 +102,6 @@ model Coupon {
   isActive       Boolean  @default(true)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
-
-  @@index([isActive])
 }
 
 model CouponRedemption {
@@ -123,8 +113,6 @@ model CouponRedemption {
   createdAt  DateTime @default(now())
 
   @@unique([couponId, userId])
-  @@index([userId])
-  @@index([orderId])
 }
 
 model Store {
@@ -174,8 +162,6 @@ model ComboProduct {
   cartItems  CartItem[]
   orderItems OrderItem[]
   variants   ComboVariant[]
-
-  @@index([isActive, createdAt])
 }
 
 model ComboVariant {
@@ -274,10 +260,6 @@ model Order {
 
   // Relations
   items OrderItem[]
-
-  @@index([userId, createdAt])
-  @@index([razorpayPaymentId])
-  @@index([status, createdAt])
 }
 
 model OrderItem {

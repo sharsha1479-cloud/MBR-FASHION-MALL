@@ -34,15 +34,15 @@ const compressImage = async (file) => {
   for (const maxWidth of [1400, 1200, 1000, 800, 650, 500, 400, 320]) {
     width = maxWidth;
     for (const quality of [82, 74, 66, 58, 50, 42, 34, 26, 18, 12]) {
-      const buffer = await sharp(file.buffer, { animated: file.mimetype === 'image/gif' })
+      const buffer = await sharp(file.buffer)
         .rotate()
         .resize({ width, withoutEnlargement: true })
-        .webp({ quality, effort: 5 })
+        .jpeg({ quality, mozjpeg: true })
         .toBuffer();
 
       bestBuffer = buffer;
       if (buffer.length <= targetBytes) {
-        const filename = `${Date.now()}-${Math.round(Math.random() * 1e9)}-${safeName(file.originalname)}.webp`;
+        const filename = `${Date.now()}-${Math.round(Math.random() * 1e9)}-${safeName(file.originalname)}.jpg`;
         const filepath = path.join(uploadsDir, filename);
         await fs.writeFile(filepath, buffer);
         return {
@@ -51,13 +51,13 @@ const compressImage = async (file) => {
           path: filepath,
           destination: uploadsDir,
           size: buffer.length,
-          mimetype: 'image/webp',
+          mimetype: 'image/jpeg',
         };
       }
     }
   }
 
-  const filename = `${Date.now()}-${Math.round(Math.random() * 1e9)}-${safeName(file.originalname)}.webp`;
+  const filename = `${Date.now()}-${Math.round(Math.random() * 1e9)}-${safeName(file.originalname)}.jpg`;
   const filepath = path.join(uploadsDir, filename);
   await fs.writeFile(filepath, bestBuffer);
   return {
@@ -66,7 +66,7 @@ const compressImage = async (file) => {
     path: filepath,
     destination: uploadsDir,
     size: bestBuffer.length,
-    mimetype: 'image/webp',
+    mimetype: 'image/jpeg',
   };
 };
 

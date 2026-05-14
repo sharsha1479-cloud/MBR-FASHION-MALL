@@ -1,6 +1,5 @@
 const asyncHandler = require('express-async-handler');
 const prisma = require('../utils/prisma');
-const cache = require('../utils/cache');
 
 const getUploadedFilenames = (files) => {
   if (!files) return [];
@@ -187,12 +186,9 @@ const syncProductDefaults = (variant) => ({
 });
 
 exports.getProducts = asyncHandler(async (req, res) => {
-  const { search, category, minPrice, maxPrice, size, trending, page, limit } = req.query;
+  const { search, category, minPrice, maxPrice, size, trending } = req.query;
   const where = {};
   const normalizedSearch = search ? String(search).trim() : '';
-  const pageNumber = Math.max(1, parseInt(page, 10) || 1);
-  const pageSize = Math.min(100, Math.max(1, parseInt(limit, 10) || 0));
-  const usePagination = page !== undefined || limit !== undefined;
 
   if (normalizedSearch) {
     const matchingCategories = await prisma.category.findMany({
@@ -228,21 +224,11 @@ exports.getProducts = asyncHandler(async (req, res) => {
     where.isTrending = String(trending).toLowerCase() === 'true';
   }
 
-  const queryOptions = {
+  let products = await prisma.product.findMany({
     where,
     include: { variants: { orderBy: { createdAt: 'asc' } } },
     orderBy: { createdAt: 'desc' },
-    ...(usePagination ? { skip: (pageNumber - 1) * (pageSize || 24), take: pageSize || 24 } : {}),
-  };
-
-  const [rows, total] = usePagination
-    ? await Promise.all([
-        prisma.product.findMany(queryOptions),
-        prisma.product.count({ where }),
-      ])
-    : [await prisma.product.findMany(queryOptions), null];
-
-  let products = rows;
+  });
 
   products = products.map(normalizeProduct);
 
@@ -251,19 +237,6 @@ exports.getProducts = asyncHandler(async (req, res) => {
     products = products.filter((product) => (
       Array.isArray(product.sizes) && product.sizes.includes(normalizedSize)
     ));
-  }
-
-  if (usePagination) {
-    res.json({
-      products,
-      pagination: {
-        page: pageNumber,
-        limit: pageSize || 24,
-        total,
-        totalPages: Math.max(1, Math.ceil(total / (pageSize || 24))),
-      },
-    });
-    return;
   }
 
   res.json(products);
@@ -324,7 +297,6 @@ exports.createProduct = asyncHandler(async (req, res) => {
     include: { variants: { orderBy: { createdAt: 'asc' } } },
   });
 
-  await cache.delByPrefix('products:');
   res.status(201).json(normalizeProduct(product));
 });
 
@@ -396,7 +368,6 @@ exports.updateProduct = asyncHandler(async (req, res) => {
     });
   });
 
-  await cache.delByPrefix('products:');
   res.json(normalizeProduct(product));
 });
 
@@ -408,7 +379,6 @@ exports.deleteProduct = asyncHandler(async (req, res) => {
   }
 
   await prisma.product.delete({ where: { id: req.params.id } });
-  await cache.delByPrefix('products:');
   res.json({ message: 'Product deleted' });
 });
 
@@ -441,6 +411,5 @@ exports.deleteVariant = asyncHandler(async (req, res) => {
     data: syncProductDefaults(nextDefault),
   });
 
-  await cache.delByPrefix('products:');
   res.json({ message: 'Variant deleted' });
 });
