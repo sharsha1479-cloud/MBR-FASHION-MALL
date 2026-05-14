@@ -92,16 +92,25 @@ exports.updateOrderStatus = asyncHandler(async (req, res) => {
     throw new Error('Order not found');
   }
 
-  const { status } = req.body;
+  const { status, cancellationReason } = req.body;
   const validStatuses = ['placed', 'shipped', 'delivered', 'cancelled'];
   if (!validStatuses.includes(status)) {
     res.status(400);
     throw new Error('Invalid order status');
   }
 
+  const reason = typeof cancellationReason === 'string' ? cancellationReason.trim() : '';
+  if (status === 'cancelled' && !reason) {
+    res.status(400);
+    throw new Error('Cancellation reason is required');
+  }
+
   const updatedOrder = await prisma.order.update({
     where: { id: req.params.id },
-    data: { status },
+    data: {
+      status,
+      cancellationReason: status === 'cancelled' ? reason : null,
+    },
     include: {
       items: { include: { product: true, comboProduct: true } },
       user: { select: { id: true, name: true, email: true } },

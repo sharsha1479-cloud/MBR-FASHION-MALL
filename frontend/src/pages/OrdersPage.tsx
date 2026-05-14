@@ -142,6 +142,12 @@ const OrdersPage = () => {
                         </span>
                       </div>
                       <p className="mt-1 text-xs font-semibold text-slate-400">{formatDate(order.createdAt)} - {getOrderItemCount(order)} item{getOrderItemCount(order) === 1 ? '' : 's'}</p>
+                      {order.status === 'cancelled' && order.cancellationReason && (
+                        <div className="mt-3 rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-800 ring-1 ring-red-100">
+                          <p className="text-[10px] font-black uppercase tracking-[0.16em] text-red-600">Cancellation message</p>
+                          <p className="mt-1 font-semibold">{order.cancellationReason}</p>
+                        </div>
+                      )}
                     </div>
                     <div className="rounded-2xl bg-slate-950 px-4 py-3 text-white lg:text-right">
                       <p className="text-[10px] font-black uppercase tracking-[0.16em] text-white/55">Order total</p>

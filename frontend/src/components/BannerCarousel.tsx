@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type MouseEvent, type PointerEvent } from 'react';
 import { Link } from 'react-router-dom';
-import { getBannerImageUrl } from '../services/banner';
+import { BANNER_PLACEHOLDER_IMAGE, getBannerImageUrl } from '../services/banner';
 
 type Banner = {
   id: string;
@@ -79,6 +79,10 @@ const BannerCarousel = ({ banners }: { banners: Banner[] }) => {
       <img
         src={getBannerImageUrl(activeBanner.image)}
         alt="Homepage banner"
+        onError={(event) => {
+          event.currentTarget.onerror = null;
+          event.currentTarget.src = BANNER_PLACEHOLDER_IMAGE;
+        }}
         className="h-full w-full object-cover"
         draggable={false}
       />

@@ -24,6 +24,8 @@ model User {
   cart     Cart?
   wishlist Wishlist?
   orders   Order[]
+
+  @@map("user")
 }
 
 model Product {
@@ -47,6 +49,8 @@ model Product {
   orderItems     OrderItem[]
   wishlistItems  WishlistItem[]
   storeInventory StoreInventory[]
+
+  @@map("product")
 }
 
 model ProductVariant {
@@ -70,6 +74,7 @@ model ProductVariant {
   wishlistItems WishlistItem[]
 
   @@index([productId])
+  @@map("productvariant")
 }
 
 model Category {
@@ -79,6 +84,8 @@ model Category {
   image     String   @db.Text
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@map("category")
 }
 
 model Banner {
@@ -91,6 +98,8 @@ model Banner {
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@map("banner")
 }
 
 model Coupon {
@@ -102,6 +111,8 @@ model Coupon {
   isActive       Boolean  @default(true)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+
+  @@map("coupon")
 }
 
 model CouponRedemption {
@@ -113,6 +124,7 @@ model CouponRedemption {
   createdAt  DateTime @default(now())
 
   @@unique([couponId, userId])
+  @@map("couponredemption")
 }
 
 model Store {
@@ -122,6 +134,8 @@ model Store {
   updatedAt DateTime @updatedAt
 
   inventory StoreInventory[]
+
+  @@map("store")
 }
 
 model StoreInventory {
@@ -144,6 +158,7 @@ model StoreInventory {
   @@unique([storeId, productId, size])
   @@index([storeId])
   @@index([productId])
+  @@map("storeinventory")
 }
 
 model ComboProduct {
@@ -162,6 +177,8 @@ model ComboProduct {
   cartItems  CartItem[]
   orderItems OrderItem[]
   variants   ComboVariant[]
+
+  @@map("comboproduct")
 }
 
 model ComboVariant {
@@ -183,6 +200,7 @@ model ComboVariant {
   orderItems   OrderItem[]
 
   @@index([comboProductId])
+  @@map("combovariant")
 }
 
 model Cart {
@@ -192,6 +210,8 @@ model Cart {
 
   // Relations
   items CartItem[]
+
+  @@map("cart")
 }
 
 model Wishlist {
@@ -200,6 +220,8 @@ model Wishlist {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   items WishlistItem[]
+
+  @@map("wishlist")
 }
 
 model WishlistItem {
@@ -214,6 +236,7 @@ model WishlistItem {
 
   @@unique([wishlistId, productId, variantId])
   @@index([variantId])
+  @@map("wishlistitem")
 }
 
 model CartItem {
@@ -239,6 +262,7 @@ model CartItem {
   @@index([variantId])
   @@index([comboVariantId])
   @@unique([cartId, comboProductId, comboVariantId, size])
+  @@map("cartitem")
 }
 
 model Order {
@@ -249,6 +273,7 @@ model Order {
   discountAmount    Float    @default(0)
   couponCode        String?
   status            String   @default("placed") // placed, shipped, delivered, cancelled
+  cancellationReason String?  @db.Text
   paymentStatus     String   @default("pending") // paid, failed, pending
   razorpayOrderId   String?
   razorpayPaymentId String?
@@ -260,6 +285,8 @@ model Order {
 
   // Relations
   items OrderItem[]
+
+  @@map("order")
 }
 
 model OrderItem {
@@ -283,4 +310,5 @@ model OrderItem {
 
   @@index([variantId])
   @@index([comboVariantId])
+  @@map("orderitem")
 }

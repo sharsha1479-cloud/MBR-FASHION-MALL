@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { fetchComboById, getComboImageUrl } from '../services/combo';
+import { COMBO_PLACEHOLDER_IMAGE, fetchComboById, getComboImageUrl } from '../services/combo';
 import { addCartItem } from '../services/cart';
 import { useAuth } from '../context/AuthContext';
 
@@ -173,7 +173,16 @@ const ComboDetailPage = () => {
           }}
           onPointerCancel={() => setDragStartX(null)}
         >
-          <img src={imageUrl} alt={combo.name} className="h-full w-full select-none object-cover" draggable={false} />
+          <img
+            src={imageUrl}
+            alt={combo.name}
+            onError={(event) => {
+              event.currentTarget.onerror = null;
+              event.currentTarget.src = COMBO_PLACEHOLDER_IMAGE;
+            }}
+            className="h-full w-full select-none object-cover"
+            draggable={false}
+          />
           {hasMultipleImages && (
             <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5 rounded-full bg-black/35 px-2.5 py-1.5 backdrop-blur">
               {comboImages.map((img: string, index: number) => (

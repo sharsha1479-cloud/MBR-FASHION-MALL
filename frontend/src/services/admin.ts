@@ -15,8 +15,8 @@ export const fetchAdminOrderById = async (orderId: string) => {
   return response.data;
 };
 
-export const updateAdminOrderStatus = async (orderId: string, status: string) => {
-  const response = await api.put(`/admin/orders/${orderId}/status`, { status });
+export const updateAdminOrderStatus = async (orderId: string, status: string, cancellationReason?: string) => {
+  const response = await api.put(`/admin/orders/${orderId}/status`, { status, cancellationReason });
   return response.data;
 };
 

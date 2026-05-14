@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { CATEGORY_PLACEHOLDER_IMAGE } from '../services/category';
 
 type CategoryCardProps = {
   label: string;
@@ -17,8 +18,12 @@ const CategoryCard = ({ label, value, image, to }: CategoryCardProps) => (
     <Link to={to ?? `/products?category=${value}`}>
       <div className="aspect-square overflow-hidden">
         <img
-          src={image}
+          src={image || CATEGORY_PLACEHOLDER_IMAGE}
           alt={label}
+          onError={(event) => {
+            event.currentTarget.onerror = null;
+            event.currentTarget.src = CATEGORY_PLACEHOLDER_IMAGE;
+          }}
           className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
         />
       </div>

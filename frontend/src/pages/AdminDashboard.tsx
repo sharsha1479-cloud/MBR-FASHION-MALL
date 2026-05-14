@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { fetchAdminOrders, fetchAdminUsers } from '../services/admin';
+import { fetchAdminOrders, fetchAdminUsers, updateAdminOrderStatus } from '../services/admin';
 import { createProduct, deleteProduct, fetchProducts, getProductImageUrl, updateProduct } from '../services/product';
 import { fetchCategories, createCategory, updateCategory, deleteCategory } from '../services/category';
 import { createBanner, deleteBanner, fetchBanners, getBannerImageUrl, updateBanner } from '../services/banner';
@@ -66,6 +66,9 @@ const AdminDashboard = () => {
   const [users, setUsers] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [search, setSearch] = useState('');
+  const [cancellingOrder, setCancellingOrder] = useState<any | null>(null);
+  const [cancelReason, setCancelReason] = useState('');
+  const [cancelLoading, setCancelLoading] = useState(false);
   const [productSearch, setProductSearch] = useState('');
   const [productPage, setProductPage] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -396,14 +399,25 @@ const AdminDashboard = () => {
 
   const dashboardStats = useMemo(() => {
     const now = new Date();
+    const todayStart = new Date(now);
+    todayStart.setHours(0, 0, 0, 0);
+    const tomorrowStart = new Date(todayStart);
+    tomorrowStart.setDate(todayStart.getDate() + 1);
     const thirtyDaysAgo = new Date(now);
     thirtyDaysAgo.setDate(now.getDate() - 30);
 
     const recentOrders = orders.filter((order) => new Date(order.createdAt) >= thirtyDaysAgo);
+    const todaysOrders = orders.filter((order) => {
+      const createdAt = new Date(order.createdAt);
+      return createdAt >= todayStart && createdAt < tomorrowStart;
+    });
     const paidRecentOrders = recentOrders.filter((order) => order.paymentStatus === 'paid');
+    const paidTodaysOrders = todaysOrders.filter((order) => order.paymentStatus === 'paid');
+    const todaysRevenue = paidTodaysOrders.reduce((sum, order) => sum + Number(order.totalAmount || 0), 0);
     const revenueLast30Days = paidRecentOrders.reduce((sum, order) => sum + Number(order.totalAmount || 0), 0);
 
     return {
+      todaysRevenue,
       revenueLast30Days,
       newOrdersLast30Days: recentOrders.length,
       totalOrders: orders.length,
@@ -587,6 +601,35 @@ const AdminDashboard = () => {
     } catch (error: any) {
       setProducts(currentProducts);
       setMessage(error.response?.data?.message || 'Could not update trending status.');
+    }
+  };
+
+  const openCancelOrder = (order: any) => {
+    setMessage('');
+    setCancellingOrder(order);
+    setCancelReason(order.cancellationReason || '');
+  };
+
+  const handleCancelOrder = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const reason = cancelReason.trim();
+    if (!cancellingOrder?.id || !reason) {
+      setMessage('Please enter why this order is being cancelled.');
+      return;
+    }
+
+    setCancelLoading(true);
+    setMessage('');
+    try {
+      const updatedOrder = await updateAdminOrderStatus(cancellingOrder.id, 'cancelled', reason);
+      setOrders((items) => items.map((order) => (order.id === updatedOrder.id ? updatedOrder : order)));
+      setCancellingOrder(null);
+      setCancelReason('');
+      setMessage('Order cancelled. The customer can now see the cancellation reason.');
+    } catch (error: any) {
+      setMessage(error.response?.data?.message || 'Could not cancel this order.');
+    } finally {
+      setCancelLoading(false);
     }
   };
 
@@ -1052,8 +1095,14 @@ const AdminDashboard = () => {
 
               {activeSection === 'dashboard' && (
                 <div className="space-y-5">
-                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
                     {[
+                      {
+                        label: "Today's revenue",
+                        value: `Rs. ${dashboardStats.todaysRevenue.toFixed(0)}`,
+                        detail: 'Paid orders today',
+                        tone: 'bg-emerald-600 text-white',
+                      },
                       {
                         label: 'Revenue last 30 days',
                         value: `Rs. ${dashboardStats.revenueLast30Days.toFixed(0)}`,
@@ -2204,7 +2253,7 @@ const AdminDashboard = () => {
 
               {activeSection === 'orders' && (
                 <AdminTable
-                  headers={['Order ID', 'User', 'Products', 'Total', 'Payment', 'Status', 'Created']}
+                  headers={['Order ID', 'User', 'Products', 'Total', 'Payment', 'Status', 'Created', 'Action']}
                   rows={filteredOrders.map((order) => [
                     order.id,
                     `${order.user?.name || 'Unknown'} (${order.user?.email || 'unknown'})`,
@@ -2215,8 +2264,24 @@ const AdminDashboard = () => {
                     }).join(', '),
                     `Rs. ${Number(order.totalAmount).toFixed(2)}`,
                     order.paymentStatus || 'pending',
-                    order.status,
+                    <div className="space-y-1">
+                      <span className="font-semibold capitalize">{order.status}</span>
+                      {order.status === 'cancelled' && order.cancellationReason && (
+                        <p className="max-w-xs text-xs text-red-700">{order.cancellationReason}</p>
+                      )}
+                    </div>,
                     new Date(order.createdAt).toLocaleDateString(),
+                    order.status === 'cancelled' ? (
+                      <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-red-700 ring-1 ring-red-200">Cancelled</span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => openCancelOrder(order)}
+                        className="rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold text-red-700 transition hover:bg-red-100"
+                      >
+                        Cancel order
+                      </button>
+                    ),
                   ])}
                 />
               )}
@@ -2248,6 +2313,46 @@ const AdminDashboard = () => {
               />
             </div>
           </div>
+        </div>
+      )}
+
+      {cancellingOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <form onSubmit={handleCancelOrder} className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl">
+            <p className="text-xs font-bold uppercase tracking-[0.24em] text-red-700">Cancel order</p>
+            <h3 className="mt-2 text-2xl font-semibold text-slate-950">{cancellingOrder.id}</h3>
+            <label className="mt-5 block text-sm font-semibold text-slate-700" htmlFor="cancelReason">
+              Reason shown to customer
+            </label>
+            <textarea
+              id="cancelReason"
+              value={cancelReason}
+              onChange={(event) => setCancelReason(event.target.value)}
+              required
+              rows={4}
+              placeholder="Example: The selected item is unavailable in stock."
+              className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-red-300 focus:outline-none focus:ring-2 focus:ring-red-100"
+            />
+            <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  setCancellingOrder(null);
+                  setCancelReason('');
+                }}
+                className="rounded-full border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              >
+                Keep order
+              </button>
+              <button
+                type="submit"
+                disabled={cancelLoading}
+                className="rounded-full bg-red-700 px-5 py-2.5 text-sm font-semibold text-white shadow hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {cancelLoading ? 'Cancelling...' : 'Cancel order'}
+              </button>
+            </div>
+          </form>
         </div>
       )}
     </div>

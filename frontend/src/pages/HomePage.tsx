@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { fetchProducts, getProductImageUrl } from '../services/product';
-import { fetchCategories, getCategoryImageUrl } from '../services/category';
+import { CATEGORY_PLACEHOLDER_IMAGE, fetchCategories, getCategoryImageUrl } from '../services/category';
 import ProductCard from '../components/ProductCard';
 import CategoryCard from '../components/CategoryCard';
 import ComboCard from '../components/ComboCard';
@@ -176,7 +176,15 @@ const HomePage = () => {
             {categoryTiles.slice(0, 8).map((category) => (
               <Link key={category.value} to={category.to ?? `/products?category=${category.value}`} className="w-[calc((100%_-_1.5rem)/4)] min-w-0 text-center">
                 <span className="mx-auto block aspect-square w-full overflow-hidden rounded-2xl bg-white shadow-md shadow-maroon/10">
-                  <img src={getCategoryImageUrl(category.image)} alt={category.label} className="h-full w-full object-cover" />
+                  <img
+                    src={getCategoryImageUrl(category.image)}
+                    alt={category.label}
+                    onError={(event) => {
+                      event.currentTarget.onerror = null;
+                      event.currentTarget.src = CATEGORY_PLACEHOLDER_IMAGE;
+                    }}
+                    className="h-full w-full object-cover"
+                  />
                 </span>
                 <span className="mt-1.5 block truncate text-[11px] font-semibold leading-4 text-slate-900">{category.label}</span>
               </Link>

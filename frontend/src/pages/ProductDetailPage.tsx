@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { addCartItem } from '../services/cart';
 import { addWishlistItem } from '../services/wishlist';
-import { fetchProductById, getProductImageUrl, fetchProducts } from '../services/product';
+import { PRODUCT_PLACEHOLDER_IMAGE, fetchProductById, getProductImageUrl, fetchProducts } from '../services/product';
 import ProductCard from '../components/ProductCard';
 import { ProductPrice } from '../utils/pricing';
 
@@ -237,7 +237,16 @@ const ProductDetailPage = () => {
             }}
             onPointerCancel={() => setDragStartX(null)}
           >
-            <img src={imageUrl} alt={product.name} className="h-full w-full select-none object-cover" draggable={false} />
+            <img
+              src={imageUrl}
+              alt={product.name}
+              onError={(event) => {
+                event.currentTarget.onerror = null;
+                event.currentTarget.src = PRODUCT_PLACEHOLDER_IMAGE;
+              }}
+              className="h-full w-full select-none object-cover"
+              draggable={false}
+            />
             {hasMultipleImages && (
               <>
                 <button
@@ -276,7 +285,15 @@ const ProductDetailPage = () => {
                   onClick={() => setSelectedImageIndex(index)}
                   className={`h-20 w-20 shrink-0 overflow-hidden rounded-2xl border transition sm:h-24 sm:w-24 ${selectedImageIndex === index ? 'border-maroon ring-2 ring-maroon/20' : 'border-slate-200 opacity-75 hover:opacity-100'}`}
                 >
-                  <img src={getProductImageUrl(img)} alt={`${product.name} ${index + 1}`} className="h-full w-full object-cover" />
+                  <img
+                    src={getProductImageUrl(img)}
+                    alt={`${product.name} ${index + 1}`}
+                    onError={(event) => {
+                      event.currentTarget.onerror = null;
+                      event.currentTarget.src = PRODUCT_PLACEHOLDER_IMAGE;
+                    }}
+                    className="h-full w-full object-cover"
+                  />
                 </button>
               ))}
             </div>

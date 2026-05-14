@@ -7,20 +7,18 @@ const getApiBase = () => {
     return configuredUrl;
   }
 
-  const frontendHost = window.location.hostname;
-  const apiUrl = new URL(configuredUrl);
+  const apiUrl = new URL(configuredUrl, window.location.origin);
   const apiIsLocal = ['localhost', '127.0.0.1'].includes(apiUrl.hostname);
-  const frontendIsLocal = ['localhost', '127.0.0.1'].includes(frontendHost);
 
-  if (apiIsLocal && !frontendIsLocal) {
-    apiUrl.hostname = frontendHost;
+  if (import.meta.env.DEV && apiIsLocal) {
+    return '/api';
   }
 
   return apiUrl.toString().replace(/\/$/, '');
 };
 
 export const API_BASE = getApiBase();
-export const API_ORIGIN = API_BASE.replace(/\/api\/?$/, '');
+export const API_ORIGIN = API_BASE.startsWith('http') ? API_BASE.replace(/\/api\/?$/, '') : '';
 
 const api = axios.create({
   baseURL: API_BASE,

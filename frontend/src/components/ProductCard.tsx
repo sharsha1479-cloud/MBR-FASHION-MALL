@@ -1,8 +1,7 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ProductPrice } from '../utils/pricing';
-
-const PLACEHOLDER_IMAGE = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400"%3E%3Crect width="100%25" height="100%25" fill="%23f8fafc"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%2364748b" font-family="Arial,sans-serif" font-size="32"%3ENo Image%3C/text%3E%3C/svg%3E';
+import { PRODUCT_PLACEHOLDER_IMAGE } from '../services/product';
 
 type ProductCardProps = {
   id: string;
@@ -31,8 +30,12 @@ const ProductCard = ({ id, name, price, mrp, offerPrice, image, category, varian
     <Link to={`/product/${id}`} aria-label={`View details for ${name}`} className="flex h-full flex-col">
       <div className={`relative aspect-square shrink-0 overflow-hidden ${featured ? 'bg-[#f4eadc]' : 'bg-accent'}`}>
         <img
-          src={image || PLACEHOLDER_IMAGE}
+          src={image || PRODUCT_PLACEHOLDER_IMAGE}
           alt={name}
+          onError={(event) => {
+            event.currentTarget.onerror = null;
+            event.currentTarget.src = PRODUCT_PLACEHOLDER_IMAGE;
+          }}
           className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
         />
         {featured && (
