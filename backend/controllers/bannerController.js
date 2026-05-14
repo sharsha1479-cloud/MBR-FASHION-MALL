@@ -1,5 +1,6 @@
 const asyncHandler = require('express-async-handler');
 const prisma = require('../utils/prisma');
+const cache = require('../utils/cache');
 
 const MAX_BANNERS = 3;
 
@@ -45,6 +46,7 @@ exports.createBanner = asyncHandler(async (req, res) => {
     },
   });
 
+  await cache.delByPrefix('banners:');
   res.status(201).json(banner);
 });
 
@@ -71,6 +73,7 @@ exports.updateBanner = asyncHandler(async (req, res) => {
     },
   });
 
+  await cache.delByPrefix('banners:');
   res.json(banner);
 });
 
@@ -84,5 +87,6 @@ exports.deleteBanner = asyncHandler(async (req, res) => {
   }
 
   await prisma.banner.delete({ where: { id } });
+  await cache.delByPrefix('banners:');
   res.json({ message: 'Banner deleted successfully.' });
 });

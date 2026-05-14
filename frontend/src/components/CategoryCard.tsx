@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import LazyImage from './LazyImage';
 
 type CategoryCardProps = {
   label: string;
@@ -16,10 +17,13 @@ const CategoryCard = ({ label, value, image, to }: CategoryCardProps) => (
   >
     <Link to={to ?? `/products?category=${value}`}>
       <div className="aspect-square overflow-hidden">
-        <img
+        <LazyImage
           src={image}
           alt={label}
           className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
+          width={400}
+          height={400}
+          sizes="(min-width: 768px) 25vw, 25vw"
         />
       </div>
       <div className="absolute inset-0 bg-black/40 flex items-center justify-center">

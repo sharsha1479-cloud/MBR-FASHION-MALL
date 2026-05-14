@@ -11,6 +11,7 @@ import { fetchBanners } from '../services/banner';
 import { fetchCombos, getComboImageUrl } from '../services/combo';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import LazyImage from '../components/LazyImage';
 
 const NEW_ARRIVALS_COUNT = 12;
 const NEW_ARRIVALS_ROTATION_MS = 12000;
@@ -46,8 +47,8 @@ const HomePage = () => {
     const loadProducts = async () => {
       try {
         const [allProducts, trending] = await Promise.all([
-          fetchProducts(),
-          fetchProducts({ trending: 'true' }),
+          fetchProducts({ page: 1, limit: 36 }),
+          fetchProducts({ trending: 'true', page: 1, limit: 18 }),
         ]);
         setProducts(allProducts);
         setNewArrivalProducts(shuffleProducts(allProducts).slice(0, NEW_ARRIVALS_COUNT));
@@ -176,7 +177,7 @@ const HomePage = () => {
             {categoryTiles.slice(0, 8).map((category) => (
               <Link key={category.value} to={category.to ?? `/products?category=${category.value}`} className="w-[calc((100%_-_1.5rem)/4)] min-w-0 text-center">
                 <span className="mx-auto block aspect-square w-full overflow-hidden rounded-2xl bg-white shadow-md shadow-maroon/10">
-                  <img src={getCategoryImageUrl(category.image)} alt={category.label} className="h-full w-full object-cover" />
+                  <LazyImage src={getCategoryImageUrl(category.image)} alt={category.label} width={160} height={160} sizes="25vw" className="h-full w-full object-cover" />
                 </span>
                 <span className="mt-1.5 block truncate text-[11px] font-semibold leading-4 text-slate-900">{category.label}</span>
               </Link>
@@ -400,7 +401,7 @@ const HomePage = () => {
             ].map((store, index) => (
               <div key={store.title} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg sm:rounded-3xl">
                 <div className="h-24 overflow-hidden sm:h-52">
-                  <img src={store.image} alt={store.title} className="h-full w-full object-cover transition-transform duration-500 hover:scale-105" />
+                  <LazyImage src={store.image} alt={store.title} width={520} height={320} sizes="(min-width: 768px) 25vw, 50vw" className="h-full w-full object-cover transition-transform duration-500 hover:scale-105" />
                 </div>
                 <div className="p-2.5 sm:p-6">
                   <h3 className="text-sm font-semibold leading-5 text-slate-900 mb-1 sm:mb-3 sm:text-2xl">{store.title}</h3>
