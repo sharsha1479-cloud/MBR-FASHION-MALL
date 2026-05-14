@@ -28,13 +28,10 @@ const ProductListPage = () => {
     if (minPrice !== '') filters.minPrice = minPrice;
     if (maxPrice !== '') filters.maxPrice = maxPrice;
     
-    console.log('🔍 Loading products with filters:', filters);
-    
     const [data, combos] = await Promise.all([
       finalCategory === 'combos' ? Promise.resolve([]) : fetchProducts(filters),
       fetchCombos(),
     ]);
-    console.log('📦 Products returned:', data);
     setProducts(data);
     setComboProducts(Array.isArray(combos) ? combos : []);
   }, [category, search, minPrice, maxPrice]);

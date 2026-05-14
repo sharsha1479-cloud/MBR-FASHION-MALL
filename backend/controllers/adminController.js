@@ -1,6 +1,13 @@
 const asyncHandler = require('express-async-handler');
 const prisma = require('../utils/prisma');
 
+const hidePaymentSignature = (order) => {
+  if (Array.isArray(order)) return order.map(hidePaymentSignature);
+  if (!order || typeof order !== 'object') return order;
+  const { paymentSignature, ...safeOrder } = order;
+  return safeOrder;
+};
+
 exports.getUsers = asyncHandler(async (req, res) => {
   const users = await prisma.user.findMany({
     select: {
@@ -58,7 +65,7 @@ exports.getAdminOrders = asyncHandler(async (req, res) => {
     orderBy: { createdAt: 'desc' },
   });
 
-  res.json(orders);
+  res.json(hidePaymentSignature(orders));
 });
 
 exports.getAdminOrderById = asyncHandler(async (req, res) => {
@@ -75,7 +82,7 @@ exports.getAdminOrderById = asyncHandler(async (req, res) => {
     throw new Error('Order not found');
   }
 
-  res.json(order);
+  res.json(hidePaymentSignature(order));
 });
 
 exports.updateOrderStatus = asyncHandler(async (req, res) => {
@@ -101,5 +108,5 @@ exports.updateOrderStatus = asyncHandler(async (req, res) => {
     },
   });
 
-  res.json(updatedOrder);
+  res.json(hidePaymentSignature(updatedOrder));
 });

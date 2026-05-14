@@ -142,7 +142,27 @@ const CheckoutPage = () => {
         throw new Error('Razorpay checkout could not be loaded.');
       }
 
-      const razorpayOrder = await createRazorpayOrder(Math.round(total * 100), `checkout_${Date.now()}`);
+      const orderItems = cartItems.map((item) => {
+        const product = item.product || item.comboProduct;
+        const price = item.comboProduct ? Number(item.price ?? item.comboVariant?.offerPrice ?? getEffectivePrice(product)) : Number(item.price ?? item.variant?.offerPrice ?? item.variant?.price ?? getEffectivePrice(product));
+        return {
+          product: item.product?.id,
+          comboProduct: item.comboProduct?.id,
+          comboVariant: item.comboVariant?.id || item.comboVariantId,
+          quantity: item.quantity,
+          price,
+          variant: item.variant?.id || item.variantId,
+          size: item.size,
+          colorName: item.colorName,
+          image: item.image,
+        };
+      });
+
+      const razorpayOrder = await createRazorpayOrder({
+        orderItems,
+        couponCode: appliedCoupon?.code,
+        receipt: `checkout_${Date.now()}`,
+      });
       const checkout = new window.Razorpay({
         key: razorpayOrder.key,
         amount: razorpayOrder.amount,
@@ -161,29 +181,11 @@ const CheckoutPage = () => {
         handler: async (response: any) => {
           try {
             await createOrder({
-              orderItems: cartItems.map((item) => {
-                const product = item.product || item.comboProduct;
-                const price = item.comboProduct ? Number(item.price ?? item.comboVariant?.offerPrice ?? getEffectivePrice(product)) : Number(item.price ?? item.variant?.offerPrice ?? item.variant?.price ?? getEffectivePrice(product));
-                return {
-                  product: item.product?.id,
-                  comboProduct: item.comboProduct?.id,
-                  comboVariant: item.comboVariant?.id || item.comboVariantId,
-                  quantity: item.quantity,
-                  price,
-                  variant: item.variant?.id || item.variantId,
-                  size: item.size,
-                  colorName: item.colorName,
-                  image: item.image,
-                };
-              }),
-              subtotalAmount: subtotal,
-              totalAmount: total,
+              orderItems,
               couponCode: appliedCoupon?.code,
               razorpayOrderId: response.razorpay_order_id,
               razorpayPaymentId: response.razorpay_payment_id,
               paymentSignature: response.razorpay_signature,
-              paymentStatus: 'paid',
-              status: 'placed',
             });
             await clearCart();
             setCartItems([]);

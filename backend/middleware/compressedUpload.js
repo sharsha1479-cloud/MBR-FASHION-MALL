@@ -5,12 +5,18 @@ const sharp = require('sharp');
 
 const uploadsDir = path.join(__dirname, '..', 'uploads');
 const targetBytes = 350 * 1024;
+const allowedMimeTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+const uploadLimits = {
+  fileSize: 5 * 1024 * 1024,
+  files: 20,
+};
 
 const upload = multer({
   storage: multer.memoryStorage(),
+  limits: uploadLimits,
   fileFilter: (req, file, cb) => {
-    if (!file.mimetype.startsWith('image/')) {
-      cb(new Error('Only image uploads are allowed.'));
+    if (!allowedMimeTypes.has(file.mimetype)) {
+      cb(new Error('Only JPEG, PNG, WebP, and GIF image uploads are allowed.'));
       return;
     }
     cb(null, true);

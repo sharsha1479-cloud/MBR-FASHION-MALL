@@ -21,7 +21,12 @@ exports.sendPasswordResetOtp = async (email, otp) => {
   const from = process.env.SMTP_FROM || process.env.SMTP_USER;
 
   if (!hasSmtpConfig()) {
-    console.log(`Password reset OTP for ${email}: ${otp}`);
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('SMTP configuration is required for password resets in production');
+    }
+    if (process.env.ALLOW_DEV_OTP_LOG === 'true') {
+      console.log(`Password reset OTP for ${email}: ${otp}`);
+    }
     return;
   }
 

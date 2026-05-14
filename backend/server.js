@@ -1,8 +1,18 @@
 const path = require('path');
 const express = require('express');
-const dotenv = require('dotenv');
+const loadEnv = require('./config/loadEnv');
+
+loadEnv();
+
 const cors = require('cors');
+const helmet = require('helmet');
+const hpp = require('hpp');
+const compression = require('compression');
+const cookieParser = require('cookie-parser');
 const prisma = require('./utils/prisma');
+const { validateProductionEnv } = require('./config/env');
+const { corsOptions, sanitizeRequest, createRateLimiter } = require('./middleware/securityMiddleware');
+const logger = require('./utils/logger');
 const authRoutes = require('./routes/authRoutes');
 const productRoutes = require('./routes/productRoutes');
 const orderRoutes = require('./routes/orderRoutes');
@@ -16,18 +26,40 @@ const comboRoutes = require('./routes/comboRoutes');
 const couponRoutes = require('./routes/couponRoutes');
 const { notFound, errorHandler } = require('./middleware/errorMiddleware');
 
-dotenv.config();
+validateProductionEnv();
 
 const app = express();
-app.use(cors());
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
+app.set('trust proxy', 1);
+app.disable('x-powered-by');
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'same-site' },
+  contentSecurityPolicy: false,
+}));
+app.use(compression());
+app.use(cors(corsOptions()));
+app.use(cookieParser());
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+app.use(hpp());
+app.use(sanitizeRequest);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+app.use(createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: Number(process.env.GLOBAL_RATE_LIMIT || 300),
+  message: 'Too many requests. Please try again later.',
+}));
 
-// Logging middleware
 app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
+  const startedAt = Date.now();
+  res.on('finish', () => {
+    logger.info('request', {
+      method: req.method,
+      path: req.path,
+      statusCode: res.statusCode,
+      durationMs: Date.now() - startedAt,
+    });
+  });
   next();
 });
 
@@ -52,5 +84,5 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running on port ${PORT}`);
+  logger.info('server_started', { port: PORT });
 });

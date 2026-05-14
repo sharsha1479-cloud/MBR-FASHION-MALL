@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const asyncHandler = require('express-async-handler');
 const prisma = require('../utils/prisma');
+const { getJwtSecret } = require('../config/env');
 
 exports.protect = asyncHandler(async (req, res, next) => {
   let token = req.headers.authorization?.startsWith('Bearer')
@@ -13,7 +14,7 @@ exports.protect = asyncHandler(async (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fashion-secret');
+    const decoded = jwt.verify(token, getJwtSecret());
     req.user = await prisma.user.findUnique({
       where: { id: decoded.userId },
       select: {

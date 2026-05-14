@@ -1,5 +1,5 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
-import { getUserFromStorage, login as loginRequest, removeUserFromStorage, signup as signupRequest } from '../services/auth';
+import { getUserFromStorage, login as loginRequest, logoutRequest, removeUserFromStorage, signup as signupRequest } from '../services/auth';
 
 type AuthUser = {
   _id?: string;
@@ -37,6 +37,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return signedUpUser;
     },
     logout: () => {
+      logoutRequest().catch(() => undefined);
       removeUserFromStorage();
       setUser(null);
     },

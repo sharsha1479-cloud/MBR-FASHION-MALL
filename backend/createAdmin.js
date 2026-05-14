@@ -1,13 +1,22 @@
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
+const loadEnv = require('./config/loadEnv');
+
+loadEnv();
 
 const prisma = new PrismaClient();
+const adminEmail = process.env.ADMIN_EMAIL || 'admin@example.com';
+const adminPassword = process.env.ADMIN_PASSWORD;
 
 async function createAdmin() {
   try {
-    const hashedPassword = await bcrypt.hash('admin123', 10);
+    if (!adminPassword || adminPassword.length < 12) {
+      throw new Error('ADMIN_PASSWORD must be set and at least 12 characters long');
+    }
+
+    const hashedPassword = await bcrypt.hash(adminPassword, 10);
     await prisma.user.upsert({
-      where: { email: 'admin@example.com' },
+      where: { email: adminEmail },
       update: {
         name: 'Admin User',
         password: hashedPassword,
@@ -16,15 +25,14 @@ async function createAdmin() {
       },
       create: {
         name: 'Admin User',
-        email: 'admin@example.com',
+        email: adminEmail,
         password: hashedPassword,
         isAdmin: true,
         role: 'admin'
       }
     });
     console.log('Admin user is ready!');
-    console.log('Email: admin@example.com');
-    console.log('Password: admin123');
+    console.log(`Email: ${adminEmail}`);
   } catch (error) {
     console.error('Error:', error.message);
   } finally {

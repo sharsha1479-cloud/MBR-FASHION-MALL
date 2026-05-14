@@ -37,28 +37,30 @@ export const resetPasswordWithOtp = async (data: ResetPasswordData) => {
   return response.data;
 };
 
+export const logoutRequest = async () => {
+  await api.post('/auth/logout');
+};
+
 export const removeUserFromStorage = () => {
   localStorage.removeItem('user');
   localStorage.removeItem('token');
   localStorage.removeItem('role');
+  sessionStorage.removeItem('user');
 };
 
 export const getUserFromStorage = () => {
-  const stored = localStorage.getItem('user');
-  if (!stored) {
-    const token = localStorage.getItem('token');
-    const role = localStorage.getItem('role');
-    return token && role ? { token, role } : null;
-  }
+  const stored = sessionStorage.getItem('user');
   try {
-    return JSON.parse(stored);
+    return stored ? JSON.parse(stored) : null;
   } catch {
+    sessionStorage.removeItem('user');
     return null;
   }
 };
 
 const persistAuth = (user: any) => {
-  localStorage.setItem('user', JSON.stringify(user));
-  localStorage.setItem('token', user.token);
-  localStorage.setItem('role', user.role);
+  localStorage.removeItem('user');
+  localStorage.removeItem('token');
+  localStorage.removeItem('role');
+  sessionStorage.setItem('user', JSON.stringify(user));
 };

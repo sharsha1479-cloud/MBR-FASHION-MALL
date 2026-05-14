@@ -1,5 +1,6 @@
 import csv
 import json
+import os
 import re
 from datetime import datetime
 from pathlib import Path
@@ -8,13 +9,13 @@ import mysql.connector
 
 
 DB_CONFIG = {
-    "host": "localhost",
-    "user": "root",
-    "password": "Harsha@9866",
-    "database": "mbr_fashion",
+    "host": os.environ.get("MYSQL_HOST", "localhost"),
+    "user": os.environ.get("MYSQL_USER", "root"),
+    "password": os.environ.get("MYSQL_PASSWORD", ""),
+    "database": os.environ.get("MYSQL_DATABASE", "mbr_fashion"),
 }
 
-CSV_DIR = Path(r"D:\Oshoppe")
+CSV_DIR = Path(os.environ.get("IMPORT_CSV_DIR", r"D:\Oshoppe"))
 
 # Import parent rows before child rows so foreign keys have the best chance to pass.
 IMPORTS = [
