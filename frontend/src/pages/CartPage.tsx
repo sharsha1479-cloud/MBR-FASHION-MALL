@@ -25,8 +25,10 @@ const CartPage = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
 
-  const loadCart = async () => {
-    setLoading(true);
+  const loadCart = async (showLoading = true) => {
+    if (showLoading) {
+      setLoading(true);
+    }
     setError('');
     try {
       const data = await fetchCart();
@@ -38,7 +40,9 @@ const CartPage = () => {
       }
       setError(cartError.response?.data?.message || 'Could not load cart.');
     } finally {
-      setLoading(false);
+      if (showLoading) {
+        setLoading(false);
+      }
     }
   };
 
@@ -59,13 +63,18 @@ const CartPage = () => {
   const updateQuantity = async (id: string, quantity: number) => {
     const item = items.find((cartItem) => cartItem.id === id);
     const maxStock = getSizeStock(item?.comboVariant || item?.variant, item?.size);
-    await updateCartItem(id, Math.min(quantity, maxStock));
-    await loadCart();
+    const maxQuantity = Number.isFinite(maxStock) ? Math.max(maxStock, 1) : Number.POSITIVE_INFINITY;
+    const nextQuantity = Math.min(Math.max(quantity || 1, 1), maxQuantity);
+    setItems((currentItems) => currentItems.map((cartItem) => (
+      cartItem.id === id ? { ...cartItem, quantity: nextQuantity } : cartItem
+    )));
+    await updateCartItem(id, nextQuantity);
+    await loadCart(false);
   };
 
   const removeItem = async (id: string) => {
     await removeCartItem(id);
-    await loadCart();
+    await loadCart(false);
   };
 
   if (loading) {
@@ -87,6 +96,9 @@ const CartPage = () => {
               const product = item.product || item.comboProduct;
               const variantProduct = item.comboProduct ? (item.comboVariant || product) : (item.variant || product);
               const maxStock = getSizeStock(item.comboVariant || item.variant, item.size);
+              const maxQuantity = Number.isFinite(maxStock) ? Math.max(maxStock, 1) : Number.POSITIVE_INFINITY;
+              const canDecrease = item.quantity > 1;
+              const canIncrease = item.quantity < maxQuantity;
               const imageUrl = item.comboProduct ? getComboImageUrl(item.image || item.comboVariant?.images?.[0] || product.image) : getProductImageUrl(item.image || item.variant?.images || product.images);
               return (
                 <div key={item.id} className="flex flex-col gap-3 sm:gap-4 rounded-2xl sm:rounded-3xl border border-slate-200 bg-slate-50 p-3 sm:p-4 md:flex-row md:items-center md:justify-between">
@@ -101,14 +113,41 @@ const CartPage = () => {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 sm:gap-3">
-                    <input
-                      type="number"
-                      min={1}
-                      max={Number.isFinite(maxStock) ? Math.max(maxStock, 1) : undefined}
-                      value={item.quantity}
-                      onChange={(event) => updateQuantity(item.id, Number(event.target.value))}
-                      className="w-16 sm:w-20 rounded-xl border border-slate-300 bg-white p-2 text-center text-sm"
-                    />
+                    <div className="flex h-10 overflow-hidden rounded-xl border border-slate-300 bg-white shadow-sm">
+                      <button
+                        type="button"
+                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                        disabled={!canDecrease}
+                        aria-label={`Decrease quantity for ${product.name}`}
+                        className="flex w-10 items-center justify-center text-lg font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-white"
+                      >
+                        -
+                      </button>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        min={1}
+                        max={Number.isFinite(maxStock) ? Math.max(maxStock, 1) : undefined}
+                        value={item.quantity}
+                        onChange={(event) => {
+                          const nextValue = event.target.value;
+                          if (!/^\d*$/.test(nextValue)) return;
+                          updateQuantity(item.id, Number(nextValue || 1));
+                        }}
+                        className="h-full w-12 border-x border-slate-200 bg-white text-center text-sm font-semibold text-slate-900 outline-none sm:w-14"
+                        aria-label={`Quantity for ${product.name}`}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                        disabled={!canIncrease}
+                        aria-label={`Increase quantity for ${product.name}`}
+                        className="flex w-10 items-center justify-center text-lg font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-white"
+                      >
+                        +
+                      </button>
+                    </div>
                     <div className="w-24 sm:w-32">
                       <ProductPrice product={{ ...variantProduct, offerPrice: item.price ?? variantProduct.offerPrice }} quantity={item.quantity} size="sm" align="right" />
                     </div>

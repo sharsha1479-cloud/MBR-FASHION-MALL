@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { addCartItem } from '../services/cart';
-import { addWishlistItem } from '../services/wishlist';
+import { addWishlistItem, fetchWishlist, removeWishlistItem } from '../services/wishlist';
 import { PRODUCT_PLACEHOLDER_IMAGE, fetchProductById, getProductImageUrl, fetchProducts } from '../services/product';
 import ProductCard from '../components/ProductCard';
 import { ProductPrice } from '../utils/pricing';
@@ -42,6 +42,9 @@ const ProductDetailPage = () => {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [paymentLoading, setPaymentLoading] = useState(false);
+  const [wishlistLoading, setWishlistLoading] = useState(false);
+  const [isWishlisted, setIsWishlisted] = useState(false);
+  const [wishlistItemId, setWishlistItemId] = useState('');
   const [dragStartX, setDragStartX] = useState<number | null>(null);
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
@@ -49,6 +52,8 @@ const ProductDetailPage = () => {
   useEffect(() => {
     if (!id) return;
 
+    setIsWishlisted(false);
+    setWishlistItemId('');
     fetchProductById(id)
       .then((data) => {
         setProduct(data);
@@ -67,6 +72,40 @@ const ProductDetailPage = () => {
       })
       .catch(() => setError('Product could not be loaded.'));
   }, [id]);
+
+  useEffect(() => {
+    if (!product || !isAuthenticated) {
+      setIsWishlisted(false);
+      setWishlistItemId('');
+      return;
+    }
+
+    let ignore = false;
+    const productVariants = Array.isArray(product.variants) && product.variants.length > 0 ? product.variants : [];
+    const currentVariant = productVariants.find((variant: any) => variant.id === selectedVariantId) || productVariants[0];
+    const currentVariantId = currentVariant?.id || null;
+
+    fetchWishlist()
+      .then((data) => {
+        if (ignore) return;
+        const matchingItem = (data.items || []).find((item: any) => {
+          const itemVariantId = item.variantId || item.variant?.id || null;
+          return item.product?.id === product.id && itemVariantId === currentVariantId;
+        });
+
+        setIsWishlisted(Boolean(matchingItem));
+        setWishlistItemId(matchingItem?.id || '');
+      })
+      .catch(() => {
+        if (ignore) return;
+        setIsWishlisted(false);
+        setWishlistItemId('');
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, [product, selectedVariantId, isAuthenticated]);
 
   if (!product) {
     return <p className="mx-auto max-w-6xl px-6 py-16 text-slate-500">Loading product...</p>;
@@ -202,13 +241,26 @@ const ProductDetailPage = () => {
     setMessage('');
     setError('');
 
+    if (wishlistLoading) return;
+
     if (!isAuthenticated) {
       requireLogin();
       return;
     }
 
+    setWishlistLoading(true);
     try {
-      await addWishlistItem(product.id, selectedVariant?.id);
+      if (isWishlisted && wishlistItemId) {
+        await removeWishlistItem(wishlistItemId);
+        setIsWishlisted(false);
+        setWishlistItemId('');
+        setMessage('Removed from wishlist.');
+        return;
+      }
+
+      const item = await addWishlistItem(product.id, variants.length > 0 ? selectedVariant?.id : undefined);
+      setIsWishlisted(true);
+      setWishlistItemId(item?.id || '');
       setMessage('Added to wishlist.');
     } catch (wishlistError: any) {
       if (wishlistError.response?.status === 401) {
@@ -216,6 +268,8 @@ const ProductDetailPage = () => {
         return;
       }
       setError(wishlistError.response?.data?.message || 'Could not add product to wishlist.');
+    } finally {
+      setWishlistLoading(false);
     }
   };
 
@@ -247,6 +301,31 @@ const ProductDetailPage = () => {
               className="h-full w-full select-none object-cover"
               draggable={false}
             />
+            <button
+              type="button"
+              onClick={handleAddToWishlist}
+              onPointerDown={(event) => event.stopPropagation()}
+              disabled={wishlistLoading}
+              aria-label={isWishlisted ? `${product.name} added to wishlist` : `Add ${product.name} to wishlist`}
+              aria-pressed={isWishlisted}
+              title={isWishlisted ? 'Added to wishlist' : 'Add to wishlist'}
+              className={`absolute right-3 top-3 z-20 flex h-11 w-11 items-center justify-center rounded-full border border-white/80 bg-white/95 shadow-lg transition hover:scale-105 hover:bg-white focus:outline-none focus:ring-2 focus:ring-maroon/30 disabled:cursor-wait sm:right-5 sm:top-5 sm:h-12 sm:w-12 ${
+                isWishlisted ? 'text-maroon' : 'text-slate-700 hover:text-maroon'
+              }`}
+            >
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                className="h-5 w-5 sm:h-6 sm:w-6"
+                fill={isWishlisted ? 'currentColor' : 'none'}
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M20.8 4.6c-1.7-1.7-4.5-1.7-6.2 0L12 7.2 9.4 4.6c-1.7-1.7-4.5-1.7-6.2 0s-1.7 4.5 0 6.2L12 19.6l8.8-8.8c1.7-1.7 1.7-4.5 0-6.2Z" />
+              </svg>
+            </button>
             {hasMultipleImages && (
               <>
                 <button
@@ -412,9 +491,10 @@ const ProductDetailPage = () => {
             </button>
             <button
               onClick={handleAddToWishlist}
+              disabled={wishlistLoading}
               className="rounded-full border border-slate-300 bg-white px-4 sm:px-5 py-3 sm:py-4 text-xs sm:text-sm font-semibold text-slate-900 shadow hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60 transition w-full"
             >
-              Wishlist
+              {isWishlisted ? 'Wishlisted' : 'Wishlist'}
             </button>
           </div>
         </section>
